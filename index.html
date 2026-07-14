@@ -16,8 +16,8 @@
 <body class="bg-neutral-950 text-neutral-100 min-h-screen transition-colors duration-300 select-none">
 
     <div id="setup-screen" class="max-w-4xl mx-auto px-4 py-8">
-        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA PRO SCOREBOARD</h1>
-        <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync Edition</p>
+        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 UNIVERSAL SCOREBOARD</h1>
+        <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync</p>
         
         <div class="flex border border-neutral-800 mb-6 bg-neutral-900 p-1">
             <button id="tab-host" onclick="switchSetupTab('host')" class="w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition lang-host-tab">
@@ -118,8 +118,20 @@
             LAUNCH SYSTEM (啟動系統)
         </button>
         
-        <div class="text-center mt-6">
-            <button onclick="toggleLanguage()" class="text-xs bg-neutral-900 border border-neutral-800 text-neutral-400 px-4 py-2 hover:text-white uppercase font-bold">🌐 Switch Language / 切換語言</button>
+        <div class="flex justify-center items-center gap-2 mt-6">
+            <span class="text-xs text-neutral-500 uppercase font-bold">🌐 Language:</span>
+            <select id="setup-lang-select" onchange="selectLanguage(this.value)" class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs px-3 py-1.5 focus:outline-none font-bold uppercase cursor-pointer">
+                <option value="zh">繁體中文</option>
+                <option value="en">English</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="it">Italiano</option>
+                <option value="pt">Português</option>
+                <option value="ru">Русский</option>
+            </select>
         </div>
     </div>
 
@@ -141,7 +153,19 @@
                 <button id="btn-mode-broadcast" onclick="switchMode('broadcast')" class="bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800 lang-mode-broadcast">BROADCAST (OBS)</button>
                 <button id="btn-chroma" onclick="toggleChroma()" class="hidden bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase lang-chroma-btn">CHROMA KEY</button>
                 <button onclick="toggleFullscreen()" class="bg-neutral-900 hover:bg-neutral-800 text-amber-500 border border-neutral-800 px-3 py-1 text-xs font-bold uppercase lang-fullscreen">🖵 TRUE FULLSCREEN</button>
-                <button onclick="toggleLanguage()" class="bg-neutral-900 hover:bg-neutral-800 text-cyan-400 border border-neutral-800 px-3 py-1 text-xs font-bold uppercase">🌐 EN/繁</button>
+                
+                <select id="main-lang-select" onchange="selectLanguage(this.value)" class="bg-neutral-900 border border-neutral-800 text-cyan-400 text-xs px-2 py-1 font-bold uppercase cursor-pointer focus:outline-none">
+                    <option value="zh">繁中</option>
+                    <option value="en">EN</option>
+                    <option value="ja">JA</option>
+                    <option value="ko">KO</option>
+                    <option value="es">ES</option>
+                    <option value="fr">FR</option>
+                    <option value="de">DE</option>
+                    <option value="it">IT</option>
+                    <option value="pt">PT</option>
+                    <option value="ru">RU</option>
+                </select>
             </div>
         </div>
 
@@ -336,7 +360,7 @@
                     
                     <div class="w-[110px] bg-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 flex-shrink-0">
                         <span class="digital text-xl text-white leading-none tracking-wide" id="bc-main-time">12:00</span>
-                        <span class="text-[9px] text-neutral-400 uppercase tracking-widest mt-1 font-bold text-center" id="bc-period">1ST QTR</span>
+                        <span class="text-[9px] text-neutral-400 uppercase tracking-widest mt-1 font-bold text-center truncate w-[100px]" id="bc-period">1ST QTR</span>
                     </div>
                     
                     <div class="w-[45px] bg-neutral-950 h-full flex items-center justify-center border-r border-neutral-800 digital text-xl text-red-500 flex-shrink-0 text-center" id="bc-shot-clock">24</div>
@@ -427,7 +451,8 @@
                 'lang-console-prev': '上節',
                 'lang-console-next': '下節',
                 'lang-bug-foul': '犯規:',
-                'lang-bug-to': '暫停:'
+                'lang-bug-to': '暫停:',
+                periods: ["第一節", "第二節", "第三節", "第四節", "延長賽"]
             },
             en: {
                 'lang-host-tab': '👑 CREATE NEW GAME (HOST)',
@@ -472,12 +497,383 @@
                 'lang-console-prev': 'PREV',
                 'lang-console-next': 'NEXT',
                 'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:'
+                'lang-bug-to': 'TO:',
+                periods: ["1ST QTR", "2ND QTR", "3RD QTR", "4TH QTR", "OT"]
+            },
+            ja: {
+                'lang-host-tab': '👑 新規試合作成 (ホスト)',
+                'lang-viewer-tab': '📺 試合に参加 (ビューアー)',
+                'lang-join-title': '試合に接続する',
+                'lang-join-desc': 'ホスト画面に表示されている6桁のコードを入力してください：',
+                'lang-home-setup': 'ホームチーム設定',
+                'lang-away-setup': 'アウェイチーム設定',
+                'lang-team-name-label': 'チーム名 / 略称',
+                'lang-team-color-label': 'チームカラー',
+                'lang-team-logo-label': 'ロゴをアップロード',
+                'lang-rules-title': '⏱️ 試合規則＆タイマー設定',
+                'lang-rule-period': 'クォーター時間 (分)',
+                'lang-rule-ot': '延長戦時間 (分)',
+                'lang-rule-shot': 'ショットクロック (秒)',
+                'lang-rule-to': 'タイムアウト回数',
+                'lang-launch-btn': 'システム起動',
+                'lang-exit': '⚙️ 終了',
+                'lang-room-label': 'ルームID:',
+                'lang-viewer-badge': 'ライブ配信 - 閲覧専用モード',
+                'lang-mode-arena': 'アリーナ画面',
+                'lang-mode-broadcast': '配信モード (OBS)',
+                'lang-chroma-btn': 'グリーンバック',
+                'lang-fullscreen': '🖵 全画面表示',
+                'lang-team-fouls': 'チームファウル',
+                'lang-timeouts-left': 'タイムアウト残数',
+                'lang-use-btn': '使用',
+                'lang-period-label': 'ピリオド',
+                'lang-shot-clock': '24秒クロック',
+                'lang-start-stop': 'スタート/ストップ',
+                'lang-timeout-btn': 'タイムアウト (60秒)',
+                'lang-horn-btn': '🔊 ホーン',
+                'lang-poss-btn': '🏀 ポゼッション',
+                'lang-ft-btn': 'フリースロー',
+                'lang-console-foul': 'ファウル:',
+                'lang-console-to': 'タイムアウト:',
+                'lang-console-use': '使',
+                'lang-console-timer': 'タイマー 開始/停止',
+                'lang-console-horn': '🔊ホーン',
+                'lang-console-24': '24秒',
+                'lang-console-14': '14秒',
+                'lang-console-prev': '前節',
+                'lang-console-next': '次節',
+                'lang-bug-foul': 'ファウル:',
+                'lang-bug-to': 'タ残:',
+                periods: ["1ST QTR", "2ND QTR", "3RD QTR", "4TH QTR", "OT"]
+            },
+            ko: {
+                'lang-host-tab': '👑 새 경기 생성 (호스트)',
+                'lang-viewer-tab': '📺 경기 참가 (뷰어/전광판)',
+                'lang-join-title': '라이브 경기 연결',
+                'lang-join-desc': '호스트 화면에 표시된 6자리 방 코드를 입력하세요:',
+                'lang-home-setup': '홈 팀 설정',
+                'lang-away-setup': '어웨이 팀 설정',
+                'lang-team-name-label': '팀 이름 / 약어',
+                'lang-team-color-label': '팀 테마 색상',
+                'lang-team-logo-label': '로고 업로드',
+                'lang-rules-title': '⏱️ 경기 규칙 및 시간 설정',
+                'lang-rule-period': '쿼터 시간 (분)',
+                'lang-rule-ot': '연장전 시간 (분)',
+                'lang-rule-shot': '공격 제한 시간 (초)',
+                'lang-rule-to': '팀별 작전타임 횟수',
+                'lang-launch-btn': '시스템 시작',
+                'lang-exit': '⚙️ 나가기',
+                'lang-room-label': '방 코드:',
+                'lang-viewer-badge': '라이브 중계 - 보기 전용 모드',
+                'lang-mode-arena': '아레나 스크린',
+                'lang-mode-broadcast': '중계 모드 (OBS)',
+                'lang-chroma-btn': '크로마키 키',
+                'lang-fullscreen': '🖵 전체 화면',
+                'lang-team-fouls': '팀 파울',
+                'lang-timeouts-left': '남은 작전타임',
+                'lang-use-btn': '사용',
+                'lang-period-label': '쿼터',
+                'lang-shot-clock': '공격 시간',
+                'lang-start-stop': '시작/정지',
+                'lang-timeout-btn': '작전타임 (60초)',
+                'lang-horn-btn': '🔊 버저',
+                'lang-poss-btn': '🏀 공격권',
+                'lang-ft-btn': '자유투',
+                'lang-console-foul': '파울:',
+                'lang-console-to': '작전타임:',
+                'lang-console-use': '사용',
+                'lang-console-timer': '타이머 시작/일시정지',
+                'lang-console-horn': '🔊버저',
+                'lang-console-24': '24초',
+                'lang-console-14': '14초',
+                'lang-console-prev': '이전',
+                'lang-console-next': '다음',
+                'lang-bug-foul': '파울:',
+                'lang-bug-to': '작타:',
+                periods: ["1ST QTR", "2ND QTR", "3RD QTR", "4TH QTR", "OT"]
+            },
+            es: {
+                'lang-host-tab': '👑 CREAR JUEGO (ANFITRIÓN)',
+                'lang-viewer-tab': '📺 UNIRSE AL JUEGO (ESPECTADOR)',
+                'lang-join-title': 'CONECTAR AL JUEGO EN VIVO',
+                'lang-join-desc': 'Ingrese el código de 6 dígitos que aparece en el host:',
+                'lang-home-setup': 'CONFIGURACIÓN EQUIPO LOCAL',
+                'lang-away-setup': 'CONFIGURACIÓN EQUIPO VISITANTE',
+                'lang-team-name-label': 'NOMBRE EQUIPO / ABBR',
+                'lang-team-color-label': 'COLOR DE EQUIPO',
+                'lang-team-logo-label': 'SUBIR ESCUDO',
+                'lang-rules-title': '⏱️ REGULACIÓN Y TIEMPOS',
+                'lang-rule-period': 'MINUTOS POR PERÍODO',
+                'lang-rule-ot': 'MINUTOS PRÓRROGA',
+                'lang-rule-shot': 'RELOJ DE POSESIÓN (SEG)',
+                'lang-rule-to': 'TIEMPOS MUERTOS POR EQUIPO',
+                'lang-launch-btn': 'INICIAR SISTEMA',
+                'lang-exit': '⚙️ SALIR',
+                'lang-room-label': 'SALA:',
+                'lang-viewer-badge': 'TRANSMISIÓN EN VIVO - SOLO LECTURA',
+                'lang-mode-arena': 'PANTALLA ARENA',
+                'lang-mode-broadcast': 'MODO OBS (BROADCAST)',
+                'lang-chroma-btn': 'FONDO VERDE',
+                'lang-fullscreen': '🖵 PANTALLA COMPLETA',
+                'lang-team-fouls': 'FALTAS DE EQUIPO',
+                'lang-timeouts-left': 'TIEMPOS RESTANTES',
+                'lang-use-btn': 'USAR',
+                'lang-period-label': 'PERÍODO',
+                'lang-shot-clock': 'RELOJ DE TIRO',
+                'lang-start-stop': 'INICIAR/PARAR',
+                'lang-timeout-btn': 'TIEMPO MUERTO (60s)',
+                'lang-horn-btn': '🔊 BOCINA',
+                'lang-poss-btn': '🏀 POSESIÓN',
+                'lang-ft-btn': 'T. LIBRE',
+                'lang-console-foul': 'FALTAS:',
+                'lang-console-to': 'T.MUERTO:',
+                'lang-console-use': 'USAR',
+                'lang-console-timer': 'INICIAR/PAUSAR TIEMPO',
+                'lang-console-horn': '🔊BOCINA',
+                'lang-console-24': '24 SEG',
+                'lang-console-14': '14 SEG',
+                'lang-console-prev': 'ANT',
+                'lang-console-next': 'SIG',
+                'lang-bug-foul': 'FALTAS:',
+                'lang-bug-to': 'TM:',
+                periods: ["1° PERÍODO", "2° PERÍODO", "3° PERÍODO", "4° PERÍODO", "PRÓRROGA"]
+            },
+            fr: {
+                'lang-host-tab': '👑 CRÉER UN MATCH (HÔTE)',
+                'lang-viewer-tab': '📺 REJOINDRE LE MATCH (SPECTATEUR)',
+                'lang-join-title': 'CONNEXION EN DIRECT',
+                'lang-join-desc': 'Entrez le code à 6 chiffres affiché sur l\'écran hôte :',
+                'lang-home-setup': 'CONFIG ÉQUIPE DOMICILE',
+                'lang-away-setup': 'CONFIG ÉQUIPE EXTÉRIEURE',
+                'lang-team-name-label': 'NOM DE L\'ÉQUIPE / ABBR',
+                'lang-team-color-label': 'COULEUR DE L\'ÉQUIPE',
+                'lang-team-logo-label': 'CHARGER LOGO',
+                'lang-rules-title': '⏱️ RÈGLEMENTATION & CHRONO',
+                'lang-rule-period': 'MINUTES PAR QUART-TEMPS',
+                'lang-rule-ot': 'MINUTES PROLONGATION',
+                'lang-rule-shot': 'RELOJ DES 24S (SEC)',
+                'lang-rule-to': 'TEMPS MORTS PAR ÉQUIPE',
+                'lang-launch-btn': 'LANCER LE SYSTÈME',
+                'lang-exit': '⚙️ QUITTER',
+                'lang-room-label': 'SALON:',
+                'lang-viewer-badge': 'DIRECT - MODE LECTURE SEULE',
+                'lang-mode-arena': 'ÉCRAN GÉANT',
+                'lang-mode-broadcast': 'MODE OBS (STREAM)',
+                'lang-chroma-btn': 'FOND VERT',
+                'lang-fullscreen': '🖵 PLEIN ÉCRAN',
+                'lang-team-fouls': 'FAUTES D\'ÉQUIPE',
+                'lang-timeouts-left': 'TEMPS MORTS RESTANTS',
+                'lang-use-btn': 'UTILISER',
+                'lang-period-label': 'PÉRIODE',
+                'lang-shot-clock': 'CHRONO DE TIR',
+                'lang-start-stop': 'START/STOP',
+                'lang-timeout-btn': 'TEMPS MORT (60s)',
+                'lang-horn-btn': '🔊 CORNE',
+                'lang-poss-btn': '🏀 POSSESSION',
+                'lang-ft-btn': 'LANCE FR.',
+                'lang-console-foul': 'FAUTES:',
+                'lang-console-to': 'T.MORT:',
+                'lang-console-use': 'UTIL',
+                'lang-console-timer': 'DEMARRER/PAUSE CHRONO',
+                'lang-console-horn': '🔊CORNE',
+                'lang-console-24': '24 SEC',
+                'lang-console-14': '14 SEC',
+                'lang-console-prev': 'PRÉC',
+                'lang-console-next': 'SUIV',
+                'lang-bug-foul': 'FAUTES:',
+                'lang-bug-to': 'TM:',
+                periods: ["1ER QUART", "2E QUART", "3E QUART", "4E QUART", "PROLONG."]
+            },
+            de: {
+                'lang-host-tab': '👑 SPIEL ERSTELLEN (HOST)',
+                'lang-viewer-tab': '📺 SPIEL BEITRETEN (ZUSCHAUER)',
+                'lang-join-title': 'LIVE-SPIEL VERBINDEN',
+                'lang-join-desc': 'Geben Sie den 6-stelligen Raumcode vom Host-Bildschirm ein:',
+                'lang-home-setup': 'HEIMTEAM-EINSTELLUNGEN',
+                'lang-away-setup': 'AUSWÄRTSTEAM-EINSTELLUNGEN',
+                'lang-team-name-label': 'TEAMNAME / ABK.',
+                'lang-team-color-label': 'TEAMFARBE',
+                'lang-team-logo-label': 'LOGO HOCHLADEN',
+                'lang-rules-title': '⏱️ REGELN & ZEITMESSUNG',
+                'lang-rule-period': 'MINUTEN PRO VIERTEL',
+                'lang-rule-ot': 'MINUTEN VERLÄNGERUNG',
+                'lang-rule-shot': 'WURFZEITAUFNAHME (SEK)',
+                'lang-rule-to': 'TIMEOUTS PRO TEAM',
+                'lang-launch-btn': 'SYSTEM STARTEN',
+                'lang-exit': '⚙️ BEENDEN',
+                'lang-room-label': 'RAUM:',
+                'lang-viewer-badge': 'LIVE-PROJEKTION - NUR LESEMODUS',
+                'lang-mode-arena': 'ARENA-ANZEIGE',
+                'lang-mode-broadcast': 'STREAM-MODO (OBS)',
+                'lang-chroma-btn': 'GRÜNER BILDSCHIRM',
+                'lang-fullscreen': '🖵 VOLLBILD',
+                'lang-team-fouls': 'TEAMFOULS',
+                'lang-timeouts-left': 'TIMEOUTS ÜBRIG',
+                'lang-use-btn': 'NÜTZEN',
+                'lang-period-label': 'VIERTEL',
+                'lang-shot-clock': 'ANGRIFFSZEIT',
+                'lang-start-stop': 'START/STOPP',
+                'lang-timeout-btn': 'TIMEOUT (60s)',
+                'lang-horn-btn': '🔊 HUPE',
+                'lang-poss-btn': '🏀 BALLBES.',
+                'lang-ft-btn': 'FREIW.',
+                'lang-console-foul': 'FOULS:',
+                'lang-console-to': 'TO:',
+                'lang-console-use': 'NUTZ',
+                'lang-console-timer': 'ZEIT START/STOPP',
+                'lang-console-horn': '🔊HUPE',
+                'lang-console-24': '24 SEK',
+                'lang-console-14': '14 SEK',
+                'lang-console-prev': 'ZURÜCK',
+                'lang-console-next': 'WEITER',
+                'lang-bug-foul': 'FOULS:',
+                'lang-bug-to': 'TO:',
+                periods: ["1. VIERTEL", "2. VIERTEL", "3. VIERTEL", "4. VIERTEL", "VERLÄNG."]
+            },
+            it: {
+                'lang-host-tab': '👑 CREA PARTITA (HOST)',
+                'lang-viewer-tab': '📺 UNISCITI ALLA PARTITA (VIEWER)',
+                'lang-join-title': 'CONNETTI ALLA PARTITA LIVE',
+                'lang-join-desc': 'Inserisci il codice a 6 cifre mostrato sullo schermo dell\'host:',
+                'lang-home-setup': 'CONFIG SQUADRA DI CASA',
+                'lang-away-setup': 'CONFIG SQUADRA OSPITE',
+                'lang-team-name-label': 'NOME SQUADRA / ABBR',
+                'lang-team-color-label': 'COLORE SOCIALE',
+                'lang-team-logo-label': 'CARICA LOGO',
+                'lang-rules-title': '⏱️ REGOLAMENTO E TEMPI',
+                'lang-rule-period': 'MINUTI PER QUARTO',
+                'lang-rule-ot': 'MINUTI OVERTIME',
+                'lang-rule-shot': 'CRONOMETRO DI TIRO (SEC)',
+                'lang-rule-to': 'TIMEOUT PER SQUADRA',
+                'lang-launch-btn': 'AVVIA SISTEMA',
+                'lang-exit': '⚙️ ESCI',
+                'lang-room-label': 'STANZA:',
+                'lang-viewer-badge': 'TRASMISSIONE LIVE - SOLO LETTURA',
+                'lang-mode-arena': 'SCHERMO ARENA',
+                'lang-mode-broadcast': 'MODALITÀ OBS (REGIA)',
+                'lang-chroma-btn': 'CHROMA KEY',
+                'lang-fullscreen': '🖵 SCHERMO INTERO',
+                'lang-team-fouls': 'FALLI DI SQUADRA',
+                'lang-timeouts-left': 'TIMEOUT RIMANENTI',
+                'lang-use-btn': 'USA',
+                'lang-period-label': 'PERIODO',
+                'lang-shot-clock': 'RELOJ DI TIRO',
+                'lang-start-stop': 'START/STOP',
+                'lang-timeout-btn': 'TIMEOUT (60s)',
+                'lang-horn-btn': '🔊 SIRENA',
+                'lang-poss-btn': '🏀 POSSESSO',
+                'lang-ft-btn': 'T. LIBERO',
+                'lang-console-foul': 'FALLI:',
+                'lang-console-to': 'TO:',
+                'lang-console-use': 'USA',
+                'lang-console-timer': 'AVVIA/PAUSA TIMER',
+                'lang-console-horn': '🔊SIRENA',
+                'lang-console-24': '24 SEC',
+                'lang-console-14': '14 SEC',
+                'lang-console-prev': 'PREC',
+                'lang-console-next': 'SUCC',
+                'lang-bug-foul': 'FALLI:',
+                'lang-bug-to': 'TO:',
+                periods: ["1° QUARTO", "2° QUARTO", "3° QUARTO", "4° QUARTO", "OVERTIME"]
+            },
+            pt: {
+                'lang-host-tab': '👑 CRIAR JOGO (ANFITRIÃO)',
+                'lang-viewer-tab': '📺 ENTRAR NO JOGO (PAINEL)',
+                'lang-join-title': 'CONECTAR AO JOGO AO VIVO',
+                'lang-join-desc': 'Insira o código de 6 dígitos exibido na tela do host:',
+                'lang-home-setup': 'CONFIG EQUIPE DA CASA',
+                'lang-away-setup': 'CONFIG EQUIPE VISITANTE',
+                'lang-team-name-label': 'NOME DA EQUIPE / ABBR',
+                'lang-team-color-label': 'COR DA EQUIPE',
+                'lang-team-logo-label': 'ENVIAR ESCUDO',
+                'lang-rules-title': '⏱️ REGULAMENTO E CRONÔMETRO',
+                'lang-rule-period': 'MINUTOS POR QUARTO',
+                'lang-rule-ot': 'MINUTOS PRORROGAÇÃO',
+                'lang-rule-shot': 'RELOGIO DE ARREMESSO (SEG)',
+                'lang-rule-to': 'TIMEOUTS POR EQUIPE',
+                'lang-launch-btn': 'INICIAR SISTEMA',
+                'lang-exit': '⚙️ SAIR',
+                'lang-room-label': 'SALA:',
+                'lang-viewer-badge': 'TRANSMISSÃO AO VIVO - MODO VISUALIZAÇÃO',
+                'lang-mode-arena': 'TELÃO DA ARENA',
+                'lang-mode-broadcast': 'MODO OBS (TRANSMISSÃO)',
+                'lang-chroma-btn': 'CROMATISMO',
+                'lang-fullscreen': '🖵 TELA CHEIA',
+                'lang-team-fouls': 'FALTAS DE EQUIPE',
+                'lang-timeouts-left': 'TIMEOUTS RESTANTES',
+                'lang-use-btn': 'USAR',
+                'lang-period-label': 'PERÍODO',
+                'lang-shot-clock': 'RELOGIO DE TIRO',
+                'lang-start-stop': 'INICIAR/PARAR',
+                'lang-timeout-btn': 'TIMEOUT (60s)',
+                'lang-horn-btn': '🔊 SIRENE',
+                'lang-poss-btn': '🏀 POSSE',
+                'lang-ft-btn': 'L. LIVRE',
+                'lang-console-foul': 'FALTAS:',
+                'lang-console-to': 'TO:',
+                'lang-console-use': 'USA',
+                'lang-console-timer': 'INICIAR/PAUSAR TEMPO',
+                'lang-console-horn': '🔊SIRENE',
+                'lang-console-24': '24 SEG',
+                'lang-console-14': '14 SEG',
+                'lang-console-prev': 'ANT',
+                'lang-console-next': 'PROX',
+                'lang-bug-foul': 'FALTAS:',
+                'lang-bug-to': 'TM:',
+                periods: ["1° QUARTO", "2° QUARTO", "3° QUARTO", "4° QUARTO", "PRORROG."]
+            },
+            ru: {
+                'lang-host-tab': '👑 СОЗДАТЬ МАТЧ (УПРАВЛЕНИЕ)',
+                'lang-viewer-tab': '📺 ПОДКЛЮЧИТЬ ТАБЛО (ПРОСМОТР)',
+                'lang-join-title': 'ПОДКЛЮЧЕНИЕ К МАТЧУ',
+                'lang-join-desc': 'Введите 6-значный код комнаты, указанный на главном экране:',
+                'lang-home-setup': 'НАСТРОЙКИ ХОЗЯЕВ',
+                'lang-away-setup': 'НАСТРОЙКИ ГОСТЕЙ',
+                'lang-team-name-label': 'НАЗВАНИЕ КОМАНДЫ / СОКР.',
+                'lang-team-color-label': 'ЦВЕТ КОМАНДЫ',
+                'lang-team-logo-label': 'ЗАГРУЗИТЬ ЛОГОТИП',
+                'lang-rules-title': '⏱️ РЕГЛАМЕНТ И ВРЕМЯ',
+                'lang-rule-period': 'МИНУТ В ЧЕТВЕРТИ',
+                'lang-rule-ot': 'МИНУТ В ОВЕРТАЙМЕ',
+                'lang-rule-shot': 'ВРЕМЯ НА АТАКУ (СЕК)',
+                'lang-rule-to': 'ТАЙМ-АУТОВ У КОМАНДЫ',
+                'lang-launch-btn': 'ЗАПУСТИТЬ СИСТЕМУ',
+                'lang-exit': '⚙️ ВЫХОД',
+                'lang-room-label': 'КОД:',
+                'lang-viewer-badge': 'ПРЯМАЯ ТРАНСЛЯЦИЯ - ТОЛЬКО ПРОСМОТР',
+                'lang-mode-arena': 'РЕЖИМ АРЕНЫ',
+                'lang-mode-broadcast': 'ТРАНСЛЯЦИЯ (OBS)',
+                'lang-chroma-btn': 'ХРОМАКЕЙ',
+                'lang-fullscreen': '🖵 ПОЛНЫЙ ЭКРАН',
+                'lang-team-fouls': 'КОМАНДНЫЕ ФОЛЫ',
+                'lang-timeouts-left': 'ОСТАЛОСЬ ТАЙМ-АУТОВ',
+                'lang-use-btn': 'ИСПОЛ.',
+                'lang-period-label': 'ПЕРИОД',
+                'lang-shot-clock': 'ВРЕМЯ НА АТАКУ',
+                'lang-start-stop': 'СТАРТ/СТОП',
+                'lang-timeout-btn': 'ТАЙМ-АУТ (60с)',
+                'lang-horn-btn': '🔊 СИРЕНА',
+                'lang-poss-btn': '🏀 ВЛАДЕНИЕ',
+                'lang-ft-btn': 'ШТРАФ.',
+                'lang-console-foul': 'ФОЛЫ:',
+                'lang-console-to': 'Т.А.:',
+                'lang-console-use': 'ИСПО',
+                'lang-console-timer': 'ЗАПУСК/ПАУЗА ТАЙМЕРА',
+                'lang-console-horn': '🔊СИРЕНА',
+                'lang-console-24': '24 СЕК',
+                'lang-console-14': '14 СЕК',
+                'lang-console-prev': 'ПРЕД',
+                'lang-console-next': 'СЛЕД',
+                'lang-bug-foul': 'ФОЛЫ:',
+                'lang-bug-to': 'ТА:',
+                periods: ["1-Я ЧЕТВ.", "2-Я ЧЕТВ.", "3-Я ЧЕТВ.", "4-Я ЧЕТВ.", "ОВЕРТАЙМ"]
             }
         };
 
-        function toggleLanguage() {
-            state.lang = state.lang === 'zh' ? 'en' : 'zh';
+        function selectLanguage(langCode) {
+            state.lang = langCode;
+            document.getElementById('setup-lang-select').value = langCode;
+            document.getElementById('main-lang-select').value = langCode;
             applyLanguage();
             if (!state.isViewer) broadcastState();
         }
@@ -485,6 +881,7 @@
         function applyLanguage() {
             const currentLexicon = i18n[state.lang];
             for (const key in currentLexicon) {
+                if (key === 'periods') continue;
                 const elements = document.querySelectorAll(`.${key}`);
                 elements.forEach(el => {
                     if (!(el.tagName === 'INPUT' && el.placeholder)) {
@@ -599,6 +996,7 @@
                         state.isChromaOn = data.isChromaOn;
                         if(state.lang !== data.lang) {
                             state.lang = data.lang;
+                            document.getElementById('main-lang-select').value = data.lang;
                             applyLanguage();
                         }
                         updateDisplay();
@@ -620,15 +1018,16 @@
         function updateSyncStatus(status) {
             const dot = document.getElementById('sync-status-dot');
             const txt = document.getElementById('sync-status-text');
+            const zhMode = state.lang === 'zh';
             if (status === 'connected') {
                 dot.className = "w-2 h-2 bg-emerald-500 inline-block";
-                txt.innerText = state.isViewer ? (state.lang === 'zh' ? "已同步現場" : "LIVE SYNCED") : (state.lang === 'zh' ? "雲端主控中" : "HOSTING CLOUD");
+                txt.innerText = state.isViewer ? (zhMode ? "已同步現場" : "LIVE SYNCED") : (zhMode ? "雲端主控中" : "HOSTING CLOUD");
             } else if (status === 'connecting') {
                 dot.className = "w-2 h-2 bg-amber-500 inline-block animate-pulse";
-                txt.innerText = state.lang === 'zh' ? "連線中..." : "CONNECTING...";
+                txt.innerText = zhMode ? "連線中..." : "CONNECTING...";
             } else {
                 dot.className = "w-2 h-2 bg-red-500 inline-block animate-pulse";
-                txt.innerText = state.lang === 'zh' ? "離線" : "OFFLINE";
+                txt.innerText = zhMode ? "離線" : "OFFLINE";
             }
         }
 
@@ -670,6 +1069,7 @@
                 if (fouls >= 5) {
                     bigB.className = "inline-block mt-2 bg-red-600 text-white px-2 py-0.5 text-xs font-extrabold tracking-widest border border-red-500 animate-pulse";
                     bcB.innerText = "B";
+                    bcB.com
                     bcB.classList.remove('hidden');
                 } else {
                     bigB.className = "inline-block mt-2 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-xs font-extrabold tracking-widest border border-neutral-800";
@@ -695,8 +1095,14 @@
             document.getElementById('bc-poss-a').style.opacity = state.possession === 'A' ? '1' : '0';
             document.getElementById('bc-poss-b').style.opacity = state.possession === 'B' ? '1' : '0';
 
-            let periodSuffix = state.lang === 'zh' ? ["第一節", "第二節", "第三節", "第四節"] : ["1ST QTR", "ND QTR", "RD QTR", "TH QTR"];
-            let pText = state.currentPeriod <= 4 ? periodSuffix[state.currentPeriod-1] : `OT ${state.currentPeriod-4}`;
+            // 動態取得當前語系的節數文字
+            let pText = "";
+            const currentPeriods = i18n[state.lang].periods;
+            if (state.currentPeriod <= 4) {
+                pText = currentPeriods[state.currentPeriod - 1];
+            } else {
+                pText = `${currentPeriods[4]} ${state.currentPeriod - 4}`;
+            }
             document.getElementById('big-period').innerText = state.currentPeriod;
             document.getElementById('bc-period').innerText = pText;
 
