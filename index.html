@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NBA PRO 雲端同步記分板系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Anta&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+    <style>
+        body { font-family: 'Oswald', 'Noto Sans TC', sans-serif; letter-spacing: 0.05em; }
+        .digital { font-family: 'Anta', monospace; }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen transition-colors duration-300 select-none">
+
+    <div id="setup-screen" class="max-w-4xl mx-auto px-4 py-8">
+        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA PRO SCOREBOARD</h1>
+        <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync Edition</p>
+        
+        <div class="flex border border-neutral-800 mb-6 bg-neutral-900 p-1">
+            <button id="tab-host" onclick="switchSetupTab('host')" class="w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition">
+                👑 建立新比賽 (主控裝置)
+            </button>
+            <button id="tab-viewer" onclick="switchSetupTab('viewer')" class="w-1/2 py-3 text-sm font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition">
+                📺 加入已建立比賽 (看板/接收端)
+            </button>
+        </div>
+
+        <div id="viewer-setup-box" class="hidden bg-neutral-900 border border-neutral-800 p-6 mb-6 text-center">
+            <h2 class="text-base font-bold mb-2 uppercase tracking-wider text-amber-500">連線至現場比賽</h2>
+            <p class="text-xs text-neutral-400 mb-4">請輸入主控裝置畫面上顯示的 6 位數房間代碼：</p>
+            <input type="text" id="input-room-code" placeholder="EX: 123456" class="bg-neutral-950 border border-neutral-800 text-center text-2xl font-bold tracking-widest text-white w-48 py-2 rounded-none focus:outline-none focus:border-amber-500 uppercase">
+        </div>
+
+        <div id="host-setup-box" class="grid grid-cols-1 md:grid-cols-2 gap-0 mb-6 border border-neutral-800 bg-neutral-900">
+            <div class="p-6 border-b md:border-b-0 md:border-r border-neutral-800">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-4 h-4 bg-blue-600"></div>
+                    <h2 class="text-lg font-bold uppercase tracking-wider text-neutral-300">HOME TEAM (主隊)</h2>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase text-neutral-500 mb-1">球隊名稱 / 縮寫</label>
+                        <input type="text" id="setup-name-a" value="ACD" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs uppercase text-neutral-500 mb-1">隊伍主題色</label>
+                            <input type="color" id="setup-color-a" value="#c8102e" class="w-full h-10 bg-neutral-950 border border-neutral-800 rounded-none p-1 cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase text-neutral-500 mb-1">上傳隊徽</label>
+                            <input type="file" id="setup-logo-a" accept="image/*" onchange="handleLogo(this, 'A')" class="text-xs text-neutral-500 file:mr-2 file:py-1 file:px-2 file:rounded-none file:border file:border-neutral-700 file:bg-neutral-800 file:text-neutral-300 w-full mt-1">
+                        </div>
+                    </div>
+                    <div class="flex justify-center pt-2">
+                        <div class="w-20 h-20 bg-neutral-950 border border-neutral-800 flex items-center justify-center p-2">
+                            <img id="preview-logo-a" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-4 h-4 bg-yellow-500"></div>
+                    <h2 class="text-lg font-bold uppercase tracking-wider text-neutral-300">AWAY TEAM (客隊)</h2>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase text-neutral-500 mb-1">球隊名稱 / 縮寫</label>
+                        <input type="text" id="setup-name-b" value="BTL" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs uppercase text-neutral-500 mb-1">隊伍主題色</label>
+                            <input type="color" id="setup-color-b" value="#552583" class="w-full h-10 bg-neutral-950 border border-neutral-800 rounded-none p-1 cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase text-neutral-500 mb-1">上傳隊徽</label>
+                            <input type="file" id="setup-logo-b" accept="image/*" onchange="handleLogo(this, 'B')" class="text-xs text-neutral-500 file:mr-2 file:py-1 file:px-2 file:rounded-none file:border file:border-neutral-700 file:bg-neutral-800 file:text-neutral-300 w-full mt-1">
+                        </div>
+                    </div>
+                    <div class="flex justify-center pt-2">
+                        <div class="w-20 h-20 bg-neutral-950 border border-neutral-800 flex items-center justify-center p-2">
+                            <img id="preview-logo-b" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="rules-setup-box" class="bg-neutral-900 border border-neutral-800 p-6 mb-6">
+            <h2 class="text-sm font-bold mb-4 uppercase tracking-widest text-neutral-400">⏱️ REGULATION & TIMING</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-[11px] uppercase text-neutral-500 mb-1">每節時間 (分)</label>
+                    <input type="number" id="cfg-period" value="12" class="w-full bg-neutral-950 border border-neutral-800 rounded-none p-2 text-center text-white font-bold">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase text-neutral-500 mb-1">延長賽時間 (分)</label>
+                    <input type="number" id="cfg-ot" value="5" class="w-full bg-neutral-950 border border-neutral-800 rounded-none p-2 text-center text-white font-bold">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase text-neutral-500 mb-1">進攻秒數 (秒)</label>
+                    <input type="number" id="cfg-shot" value="24" class="w-full bg-neutral-950 border border-neutral-800 rounded-none p-2 text-center text-white font-bold">
+                </div>
+                <div>
+                    <label class="block text-[11px] uppercase text-neutral-500 mb-1">每隊暫停次數</label>
+                    <input type="number" id="cfg-max-timeouts" value="7" class="w-full bg-neutral-950 border border-neutral-800 rounded-none p-2 text-center text-white font-bold">
+                </div>
+            </div>
+        </div>
+
+        <button onclick="initSystem()" class="w-full bg-white hover:bg-neutral-200 text-neutral-950 font-extrabold py-4 px-6 rounded-none text-md uppercase tracking-widest transition duration-150">
+            LAUNCH SYSTEM (啟動系統)
+        </button>
+    </div>
+
+    <div id="scoreboard-screen" class="hidden w-full flex flex-col min-h-screen">
+        
+        <div id="top-control-bar" class="bg-neutral-950 border-b border-neutral-900 p-2 flex flex-wrap justify-between items-center gap-2 z-50">
+            <div class="flex items-center gap-2">
+                <button onclick="backToSetup()" class="bg-neutral-900 hover:bg-neutral-800 px-3 py-1 text-xs font-bold uppercase border border-neutral-800">⚙️ EXIT</button>
+                <div class="bg-neutral-900 border border-neutral-800 px-3 py-1 text-xs font-bold flex items-center gap-2">
+                    <span class="text-neutral-500">ROOM:</span>
+                    <span id="display-room-code" class="text-amber-500 tracking-wider font-extrabold">------</span>
+                    <span id="sync-status-dot" class="w-2 h-2 bg-red-500 inline-block animate-pulse"></span>
+                    <span id="sync-status-text" class="text-[10px] text-neutral-400 uppercase">OFFLINE</span>
+                </div>
+                <div id="viewer-badge" class="hidden bg-amber-500/10 border border-amber-500 text-amber-500 text-[10px] px-2 py-0.5 font-bold tracking-widest">LIVE BROADCAST - VIEW ONLY</div>
+            </div>
+            <div class="flex items-center gap-1">
+                <button id="btn-mode-big" onclick="switchMode('bigscreen')" class="bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase">ARENA SCREEN</button>
+                <button id="btn-mode-broadcast" onclick="switchMode('broadcast')" class="bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800">BROADCAST (OBS)</button>
+                <button id="btn-chroma" onclick="toggleChroma()" class="hidden bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase">CHROMA KEY</button>
+                <button onclick="toggleFullscreen()" class="bg-neutral-900 hover:bg-neutral-800 text-amber-500 border border-neutral-800 px-3 py-1 text-xs font-bold uppercase">🖵 TRUE FULLSCREEN</button>
+            </div>
+        </div>
+
+        <div id="bigscreen-view" class="flex-1 flex flex-col justify-center p-4 max-w-[90rem] mx-auto w-full gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-7 border border-neutral-800 bg-neutral-950 shadow-2xl">
+                
+                <div class="lg:col-span-2 p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-neutral-800 relative">
+                    <div class="flex items-center gap-6">
+                        <div class="w-24 h-24 bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1.5">
+                            <img id="big-logo-a" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <span id="big-poss-a" onclick="setPossession('A')" class="text-amber-500 cursor-pointer opacity-30 text-2xl ctrl-btn">🏀</span>
+                                <h2 id="big-name-a" class="text-5xl font-extrabold tracking-tighter uppercase">HOME</h2>
+                            </div>
+                            <div id="big-bonus-a" class="inline-block mt-2 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-xs font-extrabold tracking-widest border border-neutral-800">BONUS</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center my-4 justify-center flex-1">
+                        <div class="digital text-[11rem] md:text-[13rem] font-bold tracking-tighter select-none cursor-pointer text-white leading-none" id="score-click-a" onclick="adjustScore('A', 1)" oncontextmenu="event.preventDefault(); adjustScore('A', -1);">
+                            <span id="big-score-a">0</span>
+                        </div>
+                        <div class="flex gap-2 mt-2 ctrl-btn">
+                            <button onclick="adjustScore('A', 3)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-amber-500">+3</button>
+                            <button onclick="adjustScore('A', 2)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-white">+2</button>
+                            <button onclick="adjustScore('A', 1)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-emerald-400">FT +1</button>
+                            <button onclick="adjustScore('A', -1)" class="bg-neutral-900 border border-neutral-800 text-xs px-2 py-1 text-neutral-500 hover:bg-neutral-800">-1</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 border-t border-neutral-900 pt-6">
+                        <div class="text-center border-r border-neutral-900">
+                            <span class="text-xs text-neutral-500 block uppercase tracking-widest">TEAM FOULS</span>
+                            <div class="text-5xl font-bold digital text-white mt-1" id="big-foul-a">0</div>
+                            <div class="flex justify-center gap-1 mt-2 ctrl-btn">
+                                <button onclick="adjustFoul('A', 1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 font-bold">+</button>
+                                <button onclick="adjustFoul('A', -1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 text-neutral-500">-</button>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-xs text-neutral-500 block uppercase tracking-widest">TIMEOUTS LEFT</span>
+                            <div id="big-timeouts-bar-a" class="flex justify-center items-center gap-1 h-6 mt-2"></div>
+                            <div class="flex justify-center gap-1 mt-2 ctrl-btn">
+                                <button onclick="adjustTimeout('A', -1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 font-bold uppercase text-xs">USE</button>
+                                <button onclick="adjustTimeout('A', 1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 text-neutral-500">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="big-color-bar-a" class="absolute left-0 top-0 bottom-0 w-2"></div>
+                </div>
+
+                <div class="lg:col-span-3 p-8 bg-neutral-950 flex flex-col justify-between items-center text-center border-b lg:border-b-0 lg:border-r border-neutral-800">
+                    <div class="w-full">
+                        <div class="flex justify-center items-center gap-4 border-b border-neutral-900 pb-3">
+                            <button onclick="adjustPeriod(-1)" class="text-neutral-600 hover:text-white text-sm px-2 font-bold ctrl-btn">◄</button>
+                            <span class="text-base font-bold uppercase tracking-widest text-neutral-400">PERIOD <span id="big-period" class="text-white">1</span></span>
+                            <button onclick="adjustPeriod(1)" class="text-neutral-600 hover:text-white text-sm px-2 font-bold ctrl-btn">►</button>
+                        </div>
+                        <div id="game-status-text" class="text-xs text-amber-500 font-bold uppercase mt-2 h-4 tracking-widest"></div>
+                    </div>
+
+                    <div class="my-6">
+                        <div class="digital text-9xl md:text-10xl font-bold tracking-tighter text-white cursor-pointer select-none leading-none" id="clock-click" onclick="toggleTimer()">
+                            <span id="big-main-time">12:00</span>
+                        </div>
+                    </div>
+
+                    <div class="w-full max-w-[240px] bg-neutral-900 border border-neutral-800 p-3 text-center mb-6">
+                        <span class="text-xs text-neutral-500 block uppercase tracking-widest mb-1">SHOT CLOCK</span>
+                        <div class="digital text-7xl font-bold text-red-600 leading-none" id="big-shot-clock">24</div>
+                    </div>
+
+                    <div class="w-full space-y-2 ctrl-btn">
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button id="main-timer-control" onclick="toggleTimer()" class="col-span-1 bg-amber-600 text-neutral-950 font-extrabold py-2.5 text-xs uppercase tracking-wider">START/STOP</button>
+                            <button onclick="resetShotClock(24)" class="bg-neutral-900 border border-neutral-800 font-bold text-xs text-red-500">24 SEC</button>
+                            <button onclick="resetShotClock(14)" class="bg-neutral-900 border border-neutral-800 font-bold text-xs text-yellow-500">14 SEC</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-1.5 text-xs">
+                            <button onclick="startSpecialTimer('timeout', 60)" class="bg-neutral-900 border border-neutral-800 py-2 uppercase font-bold text-neutral-400 hover:text-white">TIMEOUT (60s)</button>
+                            <button onclick="triggerBuzzer()" class="bg-neutral-900 border border-neutral-800 py-2 uppercase font-bold text-red-400 hover:text-red-300">🔊 HORN</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 p-8 flex flex-col justify-between relative">
+                    <div class="flex items-center justify-end gap-6 text-right">
+                        <div>
+                            <div class="flex items-center justify-end gap-3">
+                                <h2 id="big-name-b" class="text-5xl font-extrabold tracking-tighter uppercase">AWAY</h2>
+                                <span id="big-poss-b" onclick="setPossession('B')" class="text-amber-500 cursor-pointer opacity-30 text-2xl ctrl-btn">🏀</span>
+                            </div>
+                            <div id="big-bonus-b" class="inline-block mt-2 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-xs font-extrabold tracking-widest border border-neutral-800">BONUS</div>
+                        </div>
+                        <div class="w-24 h-24 bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1.5">
+                            <img id="big-logo-b" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center my-4 justify-center flex-1">
+                        <div class="digital text-[11rem] md:text-[13rem] font-bold tracking-tighter select-none cursor-pointer text-white leading-none" id="score-click-b" onclick="adjustScore('B', 1)" oncontextmenu="event.preventDefault(); adjustScore('B', -1);">
+                            <span id="big-score-b">0</span>
+                        </div>
+                        <div class="flex gap-2 mt-2 ctrl-btn">
+                            <button onclick="adjustScore('B', 3)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-amber-500">+3</button>
+                            <button onclick="adjustScore('B', 2)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-white">+2</button>
+                            <button onclick="adjustScore('B', 1)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-emerald-400">FT +1</button>
+                            <button onclick="adjustScore('B', -1)" class="bg-neutral-900 border border-neutral-800 text-xs px-2 py-1 text-neutral-500 hover:bg-neutral-800">-1</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 border-t border-neutral-900 pt-6">
+                        <div class="text-center border-r border-neutral-900">
+                            <span class="text-xs text-neutral-500 block uppercase tracking-widest">TEAM FOULS</span>
+                            <div class="text-5xl font-bold digital text-white mt-1" id="big-foul-b">0</div>
+                            <div class="flex justify-center gap-1 mt-2 ctrl-btn">
+                                <button onclick="adjustFoul('B', 1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 font-bold">+</button>
+                                <button onclick="adjustFoul('B', -1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 text-neutral-500">-</button>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-xs text-neutral-500 block uppercase tracking-widest">TIMEOUTS LEFT</span>
+                            <div id="big-timeouts-bar-b" class="flex justify-center items-center gap-1 h-6 mt-2"></div>
+                            <div class="flex justify-center gap-1 mt-2 ctrl-btn">
+                                <button onclick="adjustTimeout('B', -1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 font-bold uppercase text-xs">USE</button>
+                                <button onclick="adjustTimeout('B', 1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 text-neutral-500">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="big-color-bar-b" class="absolute right-0 top-0 bottom-0 w-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="broadcast-view" class="hidden flex-1 flex flex-col justify-between p-4">
+            <div id="broadcast-console" class="bg-neutral-900 border border-neutral-800 p-4 max-w-6xl mx-auto w-full shadow-xl ctrl-btn text-xs">
+                <div class="grid grid-cols-3 gap-6 items-center text-center">
+                    <div class="space-y-2 border-r border-neutral-800 pr-4">
+                        <div class="flex justify-between items-center"><span class="font-bold text-sm uppercase text-neutral-300" id="ctrl-name-a">HOME</span><button onclick="setPossession('A')" class="bg-neutral-950 border border-neutral-800 px-2 py-0.5">🏀 球權</button></div>
+                        <div class="flex gap-1"><button onclick="adjustScore('A', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-amber-500">+3</button><button onclick="adjustScore('A', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('A', 1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-emerald-400">罰球</button><button onclick="adjustScore('A', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span>犯規:</span><div class="flex gap-1"><button onclick="adjustFoul('A', 1)" class="bg-neutral-900 px-1.5 font-bold">+</button><button onclick="adjustFoul('A', -1)" class="bg-neutral-900 px-1.5 text-neutral-500">-</button></div></div>
+                            <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span>暫停:</span><div class="flex gap-1"><button onclick="adjustTimeout('A', -1)" class="bg-neutral-900 px-1.5 font-bold">用</button><button onclick="adjustTimeout('A', 1)" class="bg-neutral-900 px-1.5 text-neutral-500">+</button></div></div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-center gap-2">
+                            <button onclick="toggleTimer()" class="bg-white text-neutral-950 font-extrabold px-4 py-2 uppercase tracking-wide">啟動/暫停計時</button>
+                            <button onclick="triggerBuzzer()" class="bg-red-950 border border-red-800 text-red-400 font-bold px-2 py-1">🔊鳴笛</button>
+                        </div>
+                        <div class="flex justify-center gap-1">
+                            <button onclick="resetShotClock(24)" class="bg-neutral-950 border border-neutral-800 px-2 py-1 text-red-500 font-bold">24秒</button>
+                            <button onclick="resetShotClock(14)" class="bg-neutral-950 border border-neutral-800 px-2 py-1 text-yellow-500 font-bold">14秒</button>
+                            <div class="w-4"></div>
+                            <button onclick="adjustPeriod(-1)" class="bg-neutral-950 border border-neutral-800 px-2 py-1">上節</button>
+                            <button onclick="adjustPeriod(1)" class="bg-neutral-950 border border-neutral-800 px-2 py-1">下節</button>
+                        </div>
+                    </div>
+                    <div class="space-y-2 border-l border-neutral-800 pl-4">
+                        <div class="flex justify-between items-center"><button onclick="setPossession('B')" class="bg-neutral-950 border border-neutral-800 px-2 py-0.5">🏀 球權</button><span class="font-bold text-sm uppercase text-neutral-300" id="ctrl-name-b">AWAY</span></div>
+                        <div class="flex gap-1"><button onclick="adjustScore('B', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-amber-500">+3</button><button onclick="adjustScore('B', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('B', 1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-emerald-400">罰球</button><button onclick="adjustScore('B', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
+                        <div class="grid grid-cols-2 gap-1">
+                            <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span>犯規:</span><div class="flex gap-1"><button onclick="adjustFoul('B', 1)" class="bg-neutral-900 px-1.5 font-bold">+</button><button onclick="adjustFoul('B', -1)" class="bg-neutral-900 px-1.5 text-neutral-500">-</button></div></div>
+                            <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span>暫停:</span><div class="flex gap-1"><button onclick="adjustTimeout('B', -1)" class="bg-neutral-900 px-1.5 font-bold">用</button><button onclick="adjustTimeout('B', 1)" class="bg-neutral-900 px-1.5 text-neutral-500">+</button></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full flex justify-center py-12">
+                <div class="bg-neutral-950 border border-neutral-900 flex items-center h-14 shadow-2xl overflow-hidden font-bold text-sm relative">
+                    <div id="bc-color-bar-a" class="w-2.5 h-full"></div>
+                    <div class="px-4 flex items-center gap-3 bg-neutral-950">
+                        <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800">
+                            <img id="bc-logo-a" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                        <span id="bc-poss-a" class="text-amber-500 opacity-0 text-xs">🏀</span>
+                        <div class="flex flex-col">
+                            <span id="bc-name-a" class="uppercase tracking-wider text-base">HOME</span>
+                            <div class="text-[9px] text-neutral-400 flex gap-2 font-normal">
+                                <span>FOULS: <span id="bc-foul-text-a" class="font-bold text-white">0</span></span>
+                                <span>TO: <span id="bc-to-text-a" class="font-bold text-cyan-400">7</span></span>
+                            </div>
+                        </div>
+                        <span id="bc-bonus-a" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse">BONUS</span>
+                    </div>
+                    <div class="bg-neutral-900 px-5 h-full flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white" id="bc-score-a">0</div>
+                    <div class="px-6 bg-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 min-w-[130px]">
+                        <span class="digital text-xl text-white leading-none tracking-wide" id="bc-main-time">12:00</span>
+                        <span class="text-[10px] text-neutral-400 uppercase tracking-widest mt-1 font-bold" id="bc-period">1ST QTR</span>
+                    </div>
+                    <div class="bg-neutral-950 px-4 h-full flex items-center justify-center border-r border-neutral-800 digital text-xl text-red-500 min-w-[50px] text-center" id="bc-shot-clock">24</div>
+                    <div class="bg-neutral-900 px-5 h-full flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white" id="bc-score-b">0</div>
+                    <div class="px-4 flex items-center gap-3 bg-neutral-950">
+                        <span id="bc-bonus-b" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse">BONUS</span>
+                        <div class="flex flex-col text-right">
+                            <span id="bc-name-b" class="uppercase tracking-wider text-base">AWAY</span>
+                            <div class="text-[9px] text-neutral-400 flex gap-2 font-normal justify-end">
+                                <span>TO: <span id="bc-to-text-b" class="font-bold text-cyan-400">7</span></span>
+                                <span>FOULS: <span id="bc-foul-text-b" class="font-bold text-white">0</span></span>
+                            </div>
+                        </div>
+                        <span id="bc-poss-b" class="text-amber-500 opacity-0 text-xs">🏀</span>
+                        <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800">
+                            <img id="bc-logo-b" class="max-w-full max-h-full object-contain hidden">
+                        </div>
+                    </div>
+                    <div id="bc-color-bar-b" class="w-2.5 h-full"></div>
+                </div>
+            </div>
+            <div></div>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            isViewer: false,
+            roomCode: '',
+            mode: 'bigscreen', 
+            isChromaOn: false,
+            timerRunning: false,
+            mainSeconds: 12 * 60,
+            shotSeconds: 24,
+            currentPeriod: 1,
+            statusType: 'normal', 
+            possession: 'none',
+            teamA: { name: 'ACD', score: 0, fouls: 0, timeouts: 7, color: '#c8102e', logo: '' },
+            teamB: { name: 'BTL', score: 0, fouls: 0, timeouts: 7, color: '#552583', logo: '' },
+            config: { periodMin: 12, otMin: 5, shotClockSec: 24, maxTimeouts: 7 }
+        };
+
+        let mqttClient = null;
+        let countdownInterval = null;
+
+        function generateRoomCode() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        function switchSetupTab(type) {
+            const tHost = document.getElementById('tab-host');
+            const tViewer = document.getElementById('tab-viewer');
+            const boxHost = document.getElementById('host-setup-box');
+            const boxRules = document.getElementById('rules-setup-box');
+            const boxViewer = document.getElementById('viewer-setup-box');
+
+            if (type === 'host') {
+                state.isViewer = false;
+                tHost.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition";
+                tViewer.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition";
+                boxHost.classList.remove('hidden'); boxRules.classList.remove('hidden'); boxViewer.classList.add('hidden');
+            } else {
+                state.isViewer = true;
+                tViewer.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition";
+                tHost.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition";
+                boxHost.classList.add('hidden'); boxRules.classList.add('hidden'); boxViewer.classList.remove('hidden');
+            }
+        }
+
+        function handleLogo(input, team) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 80000) alert("隊徽檔案過大！請壓縮至 50KB 以下。");
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Img = e.target.result;
+                    if (team === 'A') {
+                        state.teamA.logo = base64Img;
+                        document.getElementById('preview-logo-a').src = base64Img;
+                        document.getElementById('preview-logo-a').classList.remove('hidden');
+                    } else {
+                        state.teamB.logo = base64Img;
+                        document.getElementById('preview-logo-b').src = base64Img;
+                        document.getElementById('preview-logo-b').classList.remove('hidden');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function initSystem() {
+            if (state.isViewer) {
+                const code = document.getElementById('input-room-code').value.trim();
+                if (code.length !== 6 || isNaN(code)) { alert("請輸入正確的 6 位數房間代碼！"); return; }
+                state.roomCode = code;
+            } else {
+                state.roomCode = generateRoomCode();
+                state.teamA.name = document.getElementById('setup-name-a').value.toUpperCase() || 'HOME';
+                state.teamA.color = document.getElementById('setup-color-a').value;
+                state.teamB.name = document.getElementById('setup-name-b').value.toUpperCase() || 'AWAY';
+                state.teamB.color = document.getElementById('setup-color-b').value;
+
+                state.config.periodMin = parseInt(document.getElementById('cfg-period').value) || 12;
+                state.config.otMin = parseInt(document.getElementById('cfg-ot').value) || 5;
+                state.config.shotClockSec = parseInt(document.getElementById('cfg-shot').value) || 24;
+                state.config.maxTimeouts = parseInt(document.getElementById('cfg-max-timeouts').value) || 7;
+
+                state.mainSeconds = state.config.periodMin * 60;
+                state.shotSeconds = state.config.shotClockSec;
+                state.teamA.timeouts = state.config.maxTimeouts;
+                state.teamB.timeouts = state.config.maxTimeouts;
+            }
+
+            document.getElementById('display-room-code').innerText = state.roomCode;
+            
+            if (state.isViewer) {
+                document.querySelectorAll('.ctrl-btn').forEach(el => el.style.display = 'none');
+                document.getElementById('broadcast-console').style.display = 'none';
+                document.getElementById('viewer-badge').classList.remove('hidden');
+                document.getElementById('score-click-a').onclick = null;
+                document.getElementById('score-click-b').onclick = null;
+                document.getElementById('clock-click').onclick = null;
+            }
+
+            updateSyncStatus('connecting');
+            mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+
+            mqttClient.on('connect', () => {
+                updateSyncStatus('connected');
+                mqttClient.subscribe(`nbascore/room/${state.roomCode}`);
+                if (!state.isViewer) broadcastState();
+            });
+
+            mqttClient.on('message', (topic, message) => {
+                if (state.isViewer) {
+                    try {
+                        const data = JSON.parse(message.toString());
+                        state.mainSeconds = data.mainSeconds; state.shotSeconds = data.shotSeconds;
+                        state.currentPeriod = data.currentPeriod; state.statusType = data.statusType;
+                        state.possession = data.possession; state.teamA = data.teamA;
+                        state.teamB = data.teamB; state.config = data.config;
+                        state.isChromaOn = data.isChromaOn;
+                        updateDisplay();
+                    } catch (e) { console.error(e); }
+                }
+            });
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('scoreboard-screen').classList.remove('hidden');
+            updateDisplay();
+        }
+
+        function broadcastState() {
+            if (state.isViewer || !mqttClient || !mqttClient.connected) return;
+            mqttClient.publish(`nbascore/room/${state.roomCode}`, JSON.stringify(state), { qos: 0, retain: true });
+        }
+
+        function updateSyncStatus(status) {
+            const dot = document.getElementById('sync-status-dot');
+            const txt = document.getElementById('sync-status-text');
+            if (status === 'connected') {
+                dot.className = "w-2 h-2 bg-emerald-500 inline-block";
+                txt.innerText = state.isViewer ? "LIVE SYNCED" : "HOSTING CLOUD";
+            } else if (status === 'connecting') {
+                dot.className = "w-2 h-2 bg-amber-500 inline-block animate-pulse";
+                txt.innerText = "CONNECTING...";
+            } else {
+                dot.className = "w-2 h-2 bg-red-500 inline-block animate-pulse";
+                txt.innerText = "OFFLINE";
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('big-name-a').innerText = state.teamA.name;
+            document.getElementById('big-name-b').innerText = state.teamB.name;
+            document.getElementById('bc-name-a').innerText = state.teamA.name;
+            document.getElementById('bc-name-b').innerText = state.teamB.name;
+            document.getElementById('ctrl-name-a').innerText = state.teamA.name;
+            document.getElementById('ctrl-name-b').innerText = state.teamB.name;
+
+            document.getElementById('big-color-bar-a').style.backgroundColor = state.teamA.color;
+            document.getElementById('big-color-bar-b').style.backgroundColor = state.teamB.color;
+            document.getElementById('bc-color-bar-a').style.backgroundColor = state.teamA.color;
+            document.getElementById('bc-color-bar-b').style.backgroundColor = state.teamB.color;
+
+            const setLogo = (logo, bigId, bcId) => {
+                const bDom = document.getElementById(bigId); const cDom = document.getElementById(bcId);
+                if(logo) { bDom.src = logo; bDom.classList.remove('hidden'); cDom.src = logo; cDom.classList.remove('hidden'); }
+                else { bDom.classList.add('hidden'); cDom.classList.add('hidden'); }
+            };
+            setLogo(state.teamA.logo, 'big-logo-a', 'bc-logo-a');
+            setLogo(state.teamB.logo, 'big-logo-b', 'bc-logo-b');
+
+            document.getElementById('big-score-a').innerText = state.teamA.score;
+            document.getElementById('big-score-b').innerText = state.teamB.score;
+            document.getElementById('bc-score-a').innerText = state.teamA.score;
+            document.getElementById('bc-score-b').innerText = state.teamB.score;
+
+            document.getElementById('big-foul-a').innerText = state.teamA.fouls;
+            document.getElementById('big-foul-b').innerText = state.teamB.fouls;
+            document.getElementById('bc-foul-text-a').innerText = state.teamA.fouls;
+            document.getElementById('bc-foul-text-b').innerText = state.teamB.fouls;
+            document.getElementById('bc-to-text-a').innerText = state.teamA.timeouts;
+            document.getElementById('bc-to-text-b').innerText = state.teamB.timeouts;
+            
+            const applyBonus = (fouls, bigBonusId, bcBonusId) => {
+                const bigB = document.getElementById(bigBonusId); const bcB = document.getElementById(bcBonusId);
+                if (fouls >= 5) {
+                    bigB.className = "inline-block mt-2 bg-red-600 text-white px-2 py-0.5 text-xs font-extrabold tracking-widest border border-red-500 animate-pulse";
+                    bcB.classList.remove('hidden');
+                } else {
+                    bigB.className = "inline-block mt-2 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-xs font-extrabold tracking-widest border border-neutral-800";
+                    bcB.classList.add('hidden');
+                }
+            };
+            applyBonus(state.teamA.fouls, 'big-bonus-a', 'bc-bonus-a');
+            applyBonus(state.teamB.fouls, 'big-bonus-b', 'bc-bonus-b');
+
+            const renderTimeouts = (timeouts, containerId) => {
+                const container = document.getElementById(containerId); container.innerHTML = '';
+                for(let i=0; i < state.config.maxTimeouts; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = `w-2.5 h-1.5 border ${i < timeouts ? 'bg-cyan-400 border-cyan-400' : 'bg-transparent border-neutral-800'}`;
+                    container.appendChild(bar);
+                }
+            };
+            renderTimeouts(state.teamA.timeouts, 'big-timeouts-bar-a');
+            renderTimeouts(state.teamB.timeouts, 'big-timeouts-bar-b');
+
+            document.getElementById('big-poss-a').style.opacity = state.possession === 'A' ? '1' : '0.1';
+            document.getElementById('big-poss-b').style.opacity = state.possession === 'B' ? '1' : '0.1';
+            document.getElementById('bc-poss-a').style.opacity = state.possession === 'A' ? '1' : '0';
+            document.getElementById('bc-poss-b').style.opacity = state.possession === 'B' ? '1' : '0';
+
+            let periodSuffix = ["ST QTR", "ND QTR", "RD QTR", "TH QTR"];
+            let pText = state.currentPeriod <= 4 ? periodSuffix[state.currentPeriod-1] : `OT ${state.currentPeriod-4}`;
+            document.getElementById('big-period').innerText = state.currentPeriod;
+            document.getElementById('bc-period').innerText = pText;
+
+            document.getElementById('game-status-text').innerText = state.statusType === 'timeout' ? "--- TIMEOUT ---" : "";
+
+            let mins = Math.floor(state.mainSeconds / 60); let secs = state.mainSeconds % 60;
+            let timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            document.getElementById('big-main-time').innerText = timeStr;
+            document.getElementById('bc-main-time').innerText = timeStr;
+
+            document.getElementById('big-shot-clock').innerText = state.shotSeconds;
+            document.getElementById('bc-shot-clock').innerText = state.shotSeconds;
+            if(state.shotSeconds <= 5 && state.shotSeconds > 0) {
+                document.getElementById('big-shot-clock').className = "digital text-7xl font-bold text-yellow-500 leading-none";
+            } else if (state.shotSeconds === 0) {
+                document.getElementById('big-shot-clock').className = "digital text-7xl font-bold text-red-600 leading-none animate-pulse";
+            } else {
+                document.getElementById('big-shot-clock').className = "digital text-7xl font-bold text-red-600 leading-none";
+            }
+
+            // 完全同步綠幕背景狀態 (不分主控或觀賽)
+            const btnChroma = document.getElementById('btn-chroma');
+            if (state.isChromaOn) {
+                document.body.className = "bg-[#00ff00] text-neutral-100 min-h-screen";
+                if(btnChroma) btnChroma.className = "bg-red-600 text-white px-3 py-1 text-xs font-bold uppercase";
+            } else {
+                document.body.className = "bg-neutral-950 text-neutral-100 min-h-screen";
+                if(btnChroma) btnChroma.className = "bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase";
+            }
+        }
+
+        function adjustScore(team, amount) {
+            if (state.isViewer) return;
+            if (team === 'A') state.teamA.score = Math.max(0, state.teamA.score + amount);
+            else state.teamB.score = Math.max(0, state.teamB.score + amount);
+            updateDisplay(); broadcastState();
+        }
+        function adjustFoul(team, amount) {
+            if (state.isViewer) return;
+            if (team === 'A') state.teamA.fouls = Math.max(0, state.teamA.fouls + amount);
+            else state.teamB.fouls = Math.max(0, state.teamB.fouls + amount);
+            updateDisplay(); broadcastState();
+        }
+        function adjustTimeout(team, amount) {
+            if (state.isViewer) return;
+            if (team === 'A') state.teamA.timeouts = Math.max(0, Math.min(state.config.maxTimeouts, state.teamA.timeouts + amount));
+            else state.teamB.timeouts = Math.max(0, Math.min(state.config.maxTimeouts, state.teamB.timeouts + amount));
+            updateDisplay(); broadcastState();
+        }
+        
+        function adjustPeriod(amount) {
+            if (state.isViewer) return;
+            pauseTimer();
+            state.currentPeriod = Math.max(1, state.currentPeriod + amount);
+            state.statusType = 'normal';
+            
+            state.teamA.fouls = 0;
+            state.teamB.fouls = 0;
+
+            if (state.currentPeriod > 4) {
+                state.mainSeconds = state.config.otMin * 60;
+            } else {
+                state.mainSeconds = state.config.periodMin * 60;
+            }
+            state.shotSeconds = state.config.shotClockSec;
+            
+            updateDisplay(); broadcastState();
+        }
+
+        function setPossession(team) {
+            if (state.isViewer) return;
+            state.possession = state.possession === team ? 'none' : team;
+            updateDisplay(); broadcastState();
+        }
+        function resetShotClock(secs) {
+            if (state.isViewer) return;
+            state.shotSeconds = secs;
+            updateDisplay(); broadcastState();
+        }
+
+        function toggleTimer() {
+            if (state.isViewer) return;
+            if (state.timerRunning) pauseTimer(); else startTimer();
+        }
+
+        function startTimer() {
+            if (state.timerRunning) return;
+            state.timerRunning = true;
+            document.getElementById('main-timer-control').className = "col-span-1 bg-red-600 text-white font-bold py-2.5 text-xs uppercase tracking-wider";
+
+            countdownInterval = setInterval(() => {
+                if (state.mainSeconds > 0) {
+                    state.mainSeconds--;
+                    if (state.statusType === 'normal' && state.shotSeconds > 0) {
+                        state.shotSeconds--;
+                        if (state.shotSeconds === 0) triggerBuzzer();
+                    }
+                } else {
+                    state.mainSeconds = 0;
+                    pauseTimer(); triggerBuzzer();
+                    state.statusType = 'normal';
+                }
+                updateDisplay(); broadcastState();
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            state.timerRunning = false; clearInterval(countdownInterval);
+            document.getElementById('main-timer-control').className = "col-span-1 bg-amber-600 text-neutral-950 font-extrabold py-2.5 text-xs uppercase tracking-wider";
+            broadcastState();
+        }
+
+        function startSpecialTimer(type, secs) {
+            if (state.isViewer) return;
+            pauseTimer(); state.statusType = type; state.mainSeconds = secs;
+            updateDisplay(); broadcastState(); startTimer();
+        }
+
+        function triggerBuzzer() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sawtooth'; 
+                oscillator.frequency.setValueAtTime(320, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.7, audioCtx.currentTime);
+                oscillator.start(); setTimeout(() => { oscillator.stop(); }, 1800);
+            } catch (e) {}
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => alert(err.message));
+            } else { document.exitFullscreen(); }
+        }
+
+        function switchMode(mode) {
+            state.mode = mode;
+            const btnBig = document.getElementById('btn-mode-big');
+            const btnBc = document.getElementById('btn-mode-broadcast');
+            const btnChroma = document.getElementById('btn-chroma');
+            const bigView = document.getElementById('bigscreen-view');
+            const bcView = document.getElementById('broadcast-view');
+
+            if (mode === 'bigscreen') {
+                btnBig.className = "bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase";
+                btnBc.className = "bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800";
+                btnChroma.classList.add('hidden'); bigView.classList.remove('hidden'); bcView.classList.add('hidden');
+                document.body.className = "bg-neutral-950 text-neutral-100 min-h-screen";
+                state.isChromaOn = false;
+            } else {
+                btnBc.className = "bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase";
+                btnBig.className = "bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800";
+                btnChroma.classList.remove('hidden');
+                bigView.classList.add('hidden'); bcView.classList.remove('hidden');
+            }
+            if (!state.isViewer) broadcastState();
+        }
+
+        function toggleChroma() {
+            state.isChromaOn = !state.isChromaOn;
+            updateDisplay();
+            if (!state.isViewer) broadcastState();
+        }
+
+        function backToSetup() {
+            if(confirm("確定離開目前連線？")) {
+                pauseTimer(); if(mqttClient) mqttClient.end();
+                updateSyncStatus('offline');
+                document.getElementById('scoreboard-screen').classList.add('hidden');
+                document.getElementById('setup-screen').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
