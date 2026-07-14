@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NBA PRO 雲端同步記分板系統 v2.3</title>
+    <title>NBA PRO 雲端同步記分板系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Anta&family=Oswald:wght=500;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
@@ -16,7 +16,7 @@
 <body class="bg-neutral-950 text-neutral-100 min-h-screen transition-colors duration-300 select-none">
 
     <div id="setup-screen" class="max-w-4xl mx-auto px-4 py-8">
-        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA PRO SCOREBOARD v2.3</h1>
+        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA PRO SCOREBOARD</h1>
         <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync Edition</p>
         
         <div class="flex border border-neutral-800 mb-6 bg-neutral-900 p-1">
@@ -314,44 +314,51 @@
             </div>
 
             <div class="w-full flex justify-center py-12">
-                <div class="bg-neutral-950 border border-neutral-900 flex items-center h-14 shadow-2xl overflow-hidden font-bold text-sm relative">
-                    <div id="bc-color-bar-a" class="w-2.5 h-full"></div>
-                    <div class="px-4 flex items-center gap-3 bg-neutral-950">
-                        <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800">
+                <div class="bg-neutral-950 border border-neutral-900 flex items-center h-14 shadow-2xl overflow-hidden font-bold text-sm relative select-none">
+                    <div id="bc-color-bar-a" class="w-2.5 h-full flex-shrink-0"></div>
+                    
+                    <div class="w-[135px] px-3 flex items-center gap-2 bg-neutral-950 flex-shrink-0">
+                        <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800 flex-shrink-0">
                             <img id="bc-logo-a" class="max-w-full max-h-full object-contain hidden">
                         </div>
-                        <span id="bc-poss-a" class="text-amber-500 opacity-0 text-xs">🏀</span>
-                        <div class="flex flex-col">
-                            <span id="bc-name-a" class="uppercase tracking-wider text-base">HOME</span>
-                            <div class="text-[9px] text-neutral-400 flex gap-2 font-normal">
+                        <span id="bc-poss-a" class="text-amber-500 opacity-0 text-xs flex-shrink-0">🏀</span>
+                        <div class="flex flex-col min-w-0 flex-grow">
+                            <span id="bc-name-a" class="uppercase tracking-wider text-base truncate">HOME</span>
+                            <div class="text-[9px] text-neutral-400 flex gap-1.5 font-normal whitespace-nowrap">
                                 <span><span class="lang-bug-foul">FOULS:</span> <span id="bc-foul-text-a" class="font-bold text-white">0</span></span>
                                 <span><span class="lang-bug-to">TO:</span> <span id="bc-to-text-a" class="font-bold text-cyan-400">7</span></span>
                             </div>
                         </div>
-                        <span id="bc-bonus-a" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse">BONUS</span>
+                        <span id="bc-bonus-a" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse flex-shrink-0">B</span>
                     </div>
-                    <div class="bg-neutral-900 px-5 h-full flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white" id="bc-score-a">0</div>
-                    <div class="px-6 bg-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 min-w-[130px]">
+                    
+                    <div class="w-[55px] h-full bg-neutral-900 flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white flex-shrink-0" id="bc-score-a">0</div>
+                    
+                    <div class="w-[110px] bg-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 flex-shrink-0">
                         <span class="digital text-xl text-white leading-none tracking-wide" id="bc-main-time">12:00</span>
-                        <span class="text-[10px] text-neutral-400 uppercase tracking-widest mt-1 font-bold" id="bc-period">1ST QTR</span>
+                        <span class="text-[9px] text-neutral-400 uppercase tracking-widest mt-1 font-bold text-center" id="bc-period">1ST QTR</span>
                     </div>
-                    <div class="bg-neutral-950 px-4 h-full flex items-center justify-center border-r border-neutral-800 digital text-xl text-red-500 min-w-[50px] text-center" id="bc-shot-clock">24</div>
-                    <div class="bg-neutral-900 px-5 h-full flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white" id="bc-score-b">0</div>
-                    <div class="px-4 flex items-center gap-3 bg-neutral-950">
-                        <span id="bc-bonus-b" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse">BONUS</span>
-                        <div class="flex flex-col text-right">
-                            <span id="bc-name-b" class="uppercase tracking-wider text-base">AWAY</span>
-                            <div class="text-[9px] text-neutral-400 flex gap-2 font-normal justify-end">
+                    
+                    <div class="w-[45px] bg-neutral-950 h-full flex items-center justify-center border-r border-neutral-800 digital text-xl text-red-500 flex-shrink-0 text-center" id="bc-shot-clock">24</div>
+                    
+                    <div class="w-[55px] h-full bg-neutral-900 flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white flex-shrink-0" id="bc-score-b">0</div>
+                    
+                    <div class="w-[135px] px-3 flex items-center gap-2 bg-neutral-950 flex-shrink-0 justify-end text-right">
+                        <span id="bc-bonus-b" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse flex-shrink-0">B</span>
+                        <div class="flex flex-col min-w-0 flex-grow text-right">
+                            <span id="bc-name-b" class="uppercase tracking-wider text-base truncate">AWAY</span>
+                            <div class="text-[9px] text-neutral-400 flex gap-1.5 font-normal justify-end whitespace-nowrap">
                                 <span><span class="lang-bug-to">TO:</span> <span id="bc-to-text-b" class="font-bold text-cyan-400">7</span></span>
                                 <span><span class="lang-bug-foul">FOULS:</span> <span id="bc-foul-text-b" class="font-bold text-white">0</span></span>
                             </div>
                         </div>
-                        <span id="bc-poss-b" class="text-amber-500 opacity-0 text-xs">🏀</span>
-                        <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800">
+                        <span id="bc-poss-b" class="text-amber-500 opacity-0 text-xs flex-shrink-0">🏀</span>
+                        <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800 flex-shrink-0">
                             <img id="bc-logo-b" class="max-w-full max-h-full object-contain hidden">
                         </div>
                     </div>
-                    <div id="bc-color-bar-b" class="w-2.5 h-full"></div>
+                    
+                    <div id="bc-color-bar-b" class="w-2.5 h-full flex-shrink-0"></div>
                 </div>
             </div>
             <div></div>
@@ -373,10 +380,9 @@
             teamA: { name: 'ACD', score: 0, fouls: 0, timeouts: 7, color: '#c8102e', logo: '' },
             teamB: { name: 'BTL', score: 0, fouls: 0, timeouts: 7, color: '#552583', logo: '' },
             config: { periodMin: 12, otMin: 5, shotClockSec: 24, maxTimeouts: 7 },
-            lang: 'zh' // 預設語言為中文
+            lang: 'zh'
         };
 
-        // 語系文本字典
         const i18n = {
             zh: {
                 'lang-host-tab': '👑 建立新比賽 (主控裝置)',
@@ -481,14 +487,11 @@
             for (const key in currentLexicon) {
                 const elements = document.querySelectorAll(`.${key}`);
                 elements.forEach(el => {
-                    if (el.tagName === 'INPUT' && el.placeholder) {
-                        // 如果有需要翻譯 placeholder 再加，這邊大多是按鈕跟文字
-                    } else {
+                    if (!(el.tagName === 'INPUT' && el.placeholder)) {
                         el.innerText = currentLexicon[key];
                     }
                 });
             }
-            // 重新刷新畫面渲染帶有變數的文字部分
             if(document.getElementById('scoreboard-screen').classList.contains('hidden') === false) {
                 updateDisplay();
             }
@@ -666,6 +669,7 @@
                 const bigB = document.getElementById(bigBonusId); const bcB = document.getElementById(bcBonusId);
                 if (fouls >= 5) {
                     bigB.className = "inline-block mt-2 bg-red-600 text-white px-2 py-0.5 text-xs font-extrabold tracking-widest border border-red-500 animate-pulse";
+                    bcB.innerText = "B";
                     bcB.classList.remove('hidden');
                 } else {
                     bigB.className = "inline-block mt-2 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-xs font-extrabold tracking-widest border border-neutral-800";
@@ -722,7 +726,6 @@
                 if(btnChroma) btnChroma.className = "bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase lang-chroma-btn";
             }
             
-            // 更新狀態點文字的語系
             if(mqttClient && mqttClient.connected) updateSyncStatus('connected');
         }
 
@@ -871,7 +874,6 @@
             }
         }
         
-        // 初始套用語言
         applyLanguage();
     </script>
 </body>
