@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NBA PRO 雲端同步記分板系統</title>
+    <title>NBA PRO SCOREBOARD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Anta&family=Oswald:wght=500;700&family=Teko:wght=600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
@@ -13,16 +13,27 @@
         .espn-font { font-family: 'Teko', sans-serif; }
         ::-webkit-scrollbar { display: none; }
         
-        .espn-glow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 255, 255, 0.05); }
-        
-        /* TNT 特效風格 */
-        .tnt-style {
-            background: linear-gradient(180deg, #1f242d 0%, #0d0f12 100%);
-            border: 2px solid #3a414e;
-            box-shadow: 0 10px 35px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.2);
+        /* 1. NBC Style */
+        .nbc-style {
+            background: #11151c;
+            border: 2px solid #2a3240;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
         }
-        .tnt-accent-red {
-            background: linear-gradient(180deg, #e61c24 0%, #990000 100%);
+
+        /* 2. ESPN Style */
+        .espn-style {
+            background: #0a0a0a;
+            border-bottom: 3px solid #cc0000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+        }
+
+        /* 3. Prime Video Style */
+        .prime-style {
+            background: rgba(18, 25, 35, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
         }
     </style>
 </head>
@@ -30,7 +41,7 @@
 
     <div id="setup-screen" class="max-w-4xl mx-auto px-4 py-8">
         <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA SCOREBOARD</h1>
-        <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync / ESPN & TNT Broadcast Edition</p>
+        <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync / Broadcast Edition</p>
         
         <div class="flex border border-neutral-800 mb-6 bg-neutral-900 p-1">
             <button id="tab-host" onclick="switchSetupTab('host')" class="w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition lang-host-tab">
@@ -56,7 +67,7 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs uppercase text-neutral-500 mb-1 lang-team-name-label">球隊名稱 / 縮寫</label>
-                        <input type="text" id="setup-name-a" value="LAKERS" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
+                        <input type="text" id="setup-name-a" value="ACD" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -84,7 +95,7 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs uppercase text-neutral-500 mb-1 lang-team-name-label">球隊名稱 / 縮寫</label>
-                        <input type="text" id="setup-name-b" value="CELTICS" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
+                        <input type="text" id="setup-name-b" value="BTL" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -130,22 +141,6 @@
         <button onclick="initSystem()" class="w-full bg-white hover:bg-neutral-200 text-neutral-950 font-extrabold py-4 px-6 rounded-none text-md uppercase tracking-widest transition duration-150 lang-launch-btn">
             LAUNCH SYSTEM (啟動系統)
         </button>
-        
-        <div class="flex justify-center items-center gap-2 mt-6">
-            <span class="text-xs text-neutral-500 uppercase font-bold">🌐 Language:</span>
-            <select id="setup-lang-select" onchange="selectLanguage(this.value)" class="bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs px-3 py-1.5 focus:outline-none font-bold uppercase cursor-pointer">
-                <option value="zh">繁體中文</option>
-                <option value="en">English</option>
-                <option value="ja">日本語</option>
-                <option value="ko">한국어</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-                <option value="de">Deutsch</option>
-                <option value="it">Italiano</option>
-                <option value="pt">Português</option>
-                <option value="ru">Русский</option>
-            </select>
-        </div>
     </div>
 
     <div id="scoreboard-screen" class="hidden w-full flex flex-col min-h-screen">
@@ -162,25 +157,12 @@
                 <div id="viewer-badge" class="hidden bg-amber-500/10 border border-amber-500 text-amber-500 text-[10px] px-2 py-0.5 font-bold tracking-widest lang-viewer-badge">LIVE BROADCAST - VIEW ONLY</div>
             </div>
             <div class="flex items-center gap-1">
-                <button id="btn-theme-toggle" onclick="toggleTheme()" class="bg-gradient-to-r from-red-600 to-red-800 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-red-500">STYLE: ESPN</button>
+                <button id="btn-theme-toggle" onclick="toggleTheme()" class="bg-gradient-to-r from-blue-600 to-indigo-800 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-blue-500">STYLE: NBC</button>
                 
                 <button id="btn-mode-big" onclick="switchMode('bigscreen')" class="bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase lang-mode-arena">ARENA SCREEN</button>
                 <button id="btn-mode-broadcast" onclick="switchMode('broadcast')" class="bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800 lang-mode-broadcast">BROADCAST (OBS)</button>
                 <button id="btn-chroma" onclick="toggleChroma()" class="hidden bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase lang-chroma-btn">CHROMA KEY</button>
                 <button onclick="toggleFullscreen()" class="bg-neutral-900 hover:bg-neutral-800 text-amber-500 border border-neutral-800 px-3 py-1 text-xs font-bold uppercase lang-fullscreen">🖵 TRUE FULLSCREEN</button>
-                
-                <select id="main-lang-select" onchange="selectLanguage(this.value)" class="bg-neutral-900 border border-neutral-800 text-cyan-400 text-xs px-2 py-1 font-bold uppercase cursor-pointer focus:outline-none">
-                    <option value="zh">繁中</option>
-                    <option value="en">EN</option>
-                    <option value="ja">JA</option>
-                    <option value="ko">KO</option>
-                    <option value="es">ES</option>
-                    <option value="fr">FR</option>
-                    <option value="de">DE</option>
-                    <option value="it">IT</option>
-                    <option value="pt">PT</option>
-                    <option value="ru">RU</option>
-                </select>
             </div>
         </div>
 
@@ -208,7 +190,6 @@
                         <div class="flex gap-2 mt-2 ctrl-btn">
                             <button onclick="adjustScore('A', 3)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-amber-500">+3</button>
                             <button onclick="adjustScore('A', 2)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-white">+2</button>
-                            <button onclick="adjustScore('A', 1)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-emerald-400">FT +1</button>
                             <button onclick="adjustScore('A', -1)" class="bg-neutral-900 border border-neutral-800 text-xs px-2 py-1 text-neutral-500 hover:bg-neutral-800">-1</button>
                         </div>
                     </div>
@@ -224,7 +205,7 @@
                         </div>
                         <div class="text-center">
                             <span class="text-xs text-neutral-500 block uppercase tracking-widest lang-timeouts-left">TIMEOUTS LEFT</span>
-                            <div id="big-timeouts-bar-a" class="flex justify-center items-center gap-1 h-6 mt-2"></div>
+                            <div id="big-timeouts-bar-a" class="flex justify-center items-center gap-1.5 h-6 mt-2"></div>
                             <div class="flex justify-center gap-1 mt-2 ctrl-btn">
                                 <button onclick="adjustTimeout('A', -1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 font-bold uppercase text-xs lang-use-btn">USE</button>
                                 <button onclick="adjustTimeout('A', 1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 text-neutral-500">+</button>
@@ -257,7 +238,7 @@
 
                     <div class="w-full space-y-2 ctrl-btn">
                         <div class="grid grid-cols-3 gap-1.5">
-                            <button id="main-timer-control" onclick="toggleTimer()" class="col-span-1 bg-amber-600 text-neutral-950 font-extrabold py-2.5 text-xs uppercase tracking-wider lang-start-stop">START/STOP</button>
+                            <button id="main-timer-control" onclick="toggleTimer()" class="col-span-1 bg-red-600 text-white font-extrabold py-2.5 text-xs uppercase tracking-wider lang-start-stop">START/STOP</button>
                             <button onclick="resetShotClock(24)" class="bg-neutral-900 border border-neutral-800 font-bold text-xs text-red-500">24 SEC</button>
                             <button onclick="resetShotClock(14)" class="bg-neutral-900 border border-neutral-800 font-bold text-xs text-yellow-500">14 SEC</button>
                         </div>
@@ -289,7 +270,6 @@
                         <div class="flex gap-2 mt-2 ctrl-btn">
                             <button onclick="adjustScore('B', 3)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-amber-500">+3</button>
                             <button onclick="adjustScore('B', 2)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-white">+2</button>
-                            <button onclick="adjustScore('B', 1)" class="bg-neutral-900 border border-neutral-800 text-xs px-3 py-1 font-bold hover:bg-neutral-800 text-emerald-400">FT +1</button>
                             <button onclick="adjustScore('B', -1)" class="bg-neutral-900 border border-neutral-800 text-xs px-2 py-1 text-neutral-500 hover:bg-neutral-800">-1</button>
                         </div>
                     </div>
@@ -305,7 +285,7 @@
                         </div>
                         <div class="text-center">
                             <span class="text-xs text-neutral-500 block uppercase tracking-widest lang-timeouts-left">TIMEOUTS LEFT</span>
-                            <div id="big-timeouts-bar-b" class="flex justify-center items-center gap-1 h-6 mt-2"></div>
+                            <div id="big-timeouts-bar-b" class="flex justify-center items-center gap-1.5 h-6 mt-2"></div>
                             <div class="flex justify-center gap-1 mt-2 ctrl-btn">
                                 <button onclick="adjustTimeout('B', -1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 font-bold uppercase text-xs lang-use-btn">USE</button>
                                 <button onclick="adjustTimeout('B', 1)" class="bg-neutral-900 border border-neutral-800 px-3 py-0.5 text-neutral-500">+</button>
@@ -322,7 +302,7 @@
                 <div class="grid grid-cols-3 gap-6 items-center text-center">
                     <div class="space-y-2 border-r border-neutral-800 pr-4">
                         <div class="flex justify-between items-center"><span class="font-bold text-sm uppercase text-neutral-300" id="ctrl-name-a">HOME</span><button onclick="setPossession('A')" class="bg-neutral-950 border border-neutral-800 px-2 py-0.5 lang-poss-btn">🏀 球權</button></div>
-                        <div class="flex gap-1"><button onclick="adjustScore('A', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-amber-500">+3</button><button onclick="adjustScore('A', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('A', 1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-emerald-400 lang-ft-btn">罰球</button><button onclick="adjustScore('A', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
+                        <div class="flex gap-1"><button onclick="adjustScore('A', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-amber-500">+3</button><button onclick="adjustScore('A', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('A', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
                         <div class="grid grid-cols-2 gap-1">
                             <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span class="lang-console-foul">犯規:</span><div class="flex gap-1"><button onclick="adjustFoul('A', 1)" class="bg-neutral-900 px-1.5 font-bold">+</button><button onclick="adjustFoul('A', -1)" class="bg-neutral-900 px-1.5 text-neutral-500">-</button></div></div>
                             <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span class="lang-console-to">暫停:</span><div class="flex gap-1"><button onclick="adjustTimeout('A', -1)" class="bg-neutral-900 px-1.5 font-bold lang-console-use">用</button><button onclick="adjustTimeout('A', 1)" class="bg-neutral-900 px-1.5 text-neutral-500">+</button></div></div>
@@ -343,7 +323,7 @@
                     </div>
                     <div class="space-y-2 border-l border-neutral-800 pl-4">
                         <div class="flex justify-between items-center"><button onclick="setPossession('B')" class="bg-neutral-950 border border-neutral-800 px-2 py-0.5 lang-poss-btn">🏀 球權</button><span class="font-bold text-sm uppercase text-neutral-300" id="ctrl-name-b">AWAY</span></div>
-                        <div class="flex gap-1"><button onclick="adjustScore('B', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-amber-500">+3</button><button onclick="adjustScore('B', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('B', 1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-emerald-400 lang-ft-btn">罰球</button><button onclick="adjustScore('B', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
+                        <div class="flex gap-1"><button onclick="adjustScore('B', 3)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold text-amber-500">+3</button><button onclick="adjustScore('B', 2)" class="w-full bg-neutral-950 border border-neutral-800 py-1 font-bold">+2</button><button onclick="adjustScore('B', -1)" class="w-full bg-neutral-950 border border-neutral-800 py-1 text-neutral-500">-1</button></div>
                         <div class="grid grid-cols-2 gap-1">
                             <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span class="lang-console-foul">犯規:</span><div class="flex gap-1"><button onclick="adjustFoul('B', 1)" class="bg-neutral-900 px-1.5 font-bold">+</button><button onclick="adjustFoul('B', -1)" class="bg-neutral-900 px-1.5 text-neutral-500">-</button></div></div>
                             <div class="bg-neutral-950 p-1 border border-neutral-800 flex justify-between items-center"><span class="lang-console-to">暫停:</span><div class="flex gap-1"><button onclick="adjustTimeout('B', -1)" class="bg-neutral-900 px-1.5 font-bold lang-console-use">用</button><button onclick="adjustTimeout('B', 1)" class="bg-neutral-900 px-1.5 text-neutral-500">+</button></div></div>
@@ -353,58 +333,50 @@
             </div>
 
             <div class="w-full flex justify-center py-10">
-                <div id="bc-card-container" class="espn-glow bg-neutral-950 border-2 border-neutral-800/80 rounded-md flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-6xl w-full">
+                <div id="bc-card-container" class="nbc-style flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-5xl w-full">
                     
-                    <div id="bc-team-box-a" class="w-[300px] h-full flex items-center px-4 bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 relative flex-shrink-0">
-                        <div id="bc-color-bar-a" class="absolute left-0 top-0 bottom-0 w-3 shadow-lg"></div>
+                    <div id="bc-team-box-a" class="w-[280px] h-full flex items-center px-3 relative flex-shrink-0">
+                        <div id="bc-color-bar-a" class="absolute left-0 top-0 bottom-0 w-3"></div>
                         <div class="w-12 h-12 flex items-center justify-center bg-neutral-900 border border-neutral-800 rounded p-1 flex-shrink-0 ml-2">
                             <img id="bc-logo-a" class="max-w-full max-h-full object-contain hidden">
                         </div>
                         <div class="flex flex-col min-w-0 flex-grow ml-3">
                             <div class="flex items-center gap-2">
-                                <span id="bc-name-a" class="espn-font text-3xl tracking-wide uppercase truncate text-white leading-none">LAKERS</span>
+                                <span id="bc-name-a" class="espn-font text-3xl tracking-wide uppercase truncate text-white leading-none">ACD</span>
                                 <span id="bc-poss-a" class="text-amber-500 text-sm opacity-0 flex-shrink-0 animate-pulse">🏀</span>
                             </div>
-                            <div class="flex items-center gap-3 text-[11px] text-neutral-400 mt-1">
-                                <span class="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300 font-medium"><span class="lang-bug-foul">FOULS</span> <strong id="bc-foul-text-a" class="text-white">0</strong></span>
-                                <span class="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300 font-medium"><span class="lang-bug-to">TO</span> <strong id="bc-to-text-a" class="text-cyan-400">7</strong></span>
-                                <span id="bc-bonus-a" class="bg-red-600 text-white font-black px-1.5 py-0.5 rounded text-[10px] hidden animate-pulse">BONUS</span>
-                            </div>
+                            <div id="bc-to-dots-a" class="flex gap-1 mt-1"></div>
                         </div>
                     </div>
 
-                    <div id="bc-score-box-a" class="w-[110px] h-full bg-neutral-900/90 border-x border-neutral-800 flex items-center justify-center digital text-5xl font-extrabold text-white flex-shrink-0 shadow-inner" id="bc-score-a">0</div>
+                    <div id="bc-score-a" class="w-[90px] h-full bg-black/40 flex items-center justify-center digital text-5xl font-extrabold text-white flex-shrink-0">0</div>
 
-                    <div id="bc-center-box" class="w-[220px] bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 flex-shrink-0 px-2">
+                    <div id="bc-center-box" class="flex-grow bg-neutral-900 h-full flex flex-col justify-center items-center border-x border-neutral-800 px-2">
                         <span class="digital text-3xl font-black text-amber-400 leading-none tracking-tight" id="bc-main-time">12:00</span>
-                        <div class="flex items-center gap-2 mt-1.5">
-                            <span class="espn-font text-lg text-neutral-300 tracking-wider uppercase text-center font-bold" id="bc-period">1ST QTR</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="espn-font text-lg text-neutral-300 tracking-wider uppercase" id="bc-period">1ST QTR</span>
                         </div>
                     </div>
 
-                    <div id="bc-shot-box" class="w-[90px] bg-black h-full flex flex-col items-center justify-center border-r border-neutral-800 flex-shrink-0">
-                        <span class="text-[9px] text-neutral-500 uppercase tracking-widest font-extrabold -mb-1">SHOT</span>
+                    <div id="bc-shot-box" class="w-[80px] bg-red-950/80 h-full flex flex-col items-center justify-center border-r border-neutral-800 flex-shrink-0">
+                        <span class="text-[9px] text-neutral-400 uppercase tracking-widest font-extrabold -mb-1">SHOT</span>
                         <span class="digital text-3xl font-extrabold text-red-500 leading-none" id="bc-shot-clock">24</span>
                     </div>
 
-                    <div id="bc-score-box-b" class="w-[110px] h-full bg-neutral-900/90 border-r border-neutral-800 flex items-center justify-center digital text-5xl font-extrabold text-white flex-shrink-0 shadow-inner" id="bc-score-b">0</div>
+                    <div id="bc-score-b" class="w-[90px] h-full bg-black/40 flex items-center justify-center digital text-5xl font-extrabold text-white flex-shrink-0">0</div>
 
-                    <div id="bc-team-box-b" class="w-[300px] h-full flex items-center px-4 bg-gradient-to-l from-neutral-900 via-neutral-950 to-neutral-900 relative flex-shrink-0 justify-end text-right">
-                        <div class="flex flex-col min-w-0 flex-grow mr-3 text-right">
+                    <div id="bc-team-box-b" class="w-[280px] h-full flex items-center px-3 relative flex-shrink-0 justify-end text-right">
+                        <div class="flex flex-col min-w-0 flex-grow mr-3 text-right items-end">
                             <div class="flex items-center justify-end gap-2">
                                 <span id="bc-poss-b" class="text-amber-500 text-sm opacity-0 flex-shrink-0 animate-pulse">🏀</span>
-                                <span id="bc-name-b" class="espn-font text-3xl tracking-wide uppercase truncate text-white leading-none">CELTICS</span>
+                                <span id="bc-name-b" class="espn-font text-3xl tracking-wide uppercase truncate text-white leading-none">BTL</span>
                             </div>
-                            <div class="flex items-center justify-end gap-3 text-[11px] text-neutral-400 mt-1">
-                                <span id="bc-bonus-b" class="bg-red-600 text-white font-black px-1.5 py-0.5 rounded text-[10px] hidden animate-pulse">BONUS</span>
-                                <span class="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300 font-medium"><span class="lang-bug-to">TO</span> <strong id="bc-to-text-b" class="text-cyan-400">7</strong></span>
-                                <span class="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300 font-medium"><span class="lang-bug-foul">FOULS</span> <strong id="bc-foul-text-b" class="text-white">0</strong></span>
-                            </div>
+                            <div id="bc-to-dots-b" class="flex gap-1 mt-1 justify-end"></div>
                         </div>
                         <div class="w-12 h-12 flex items-center justify-center bg-neutral-900 border border-neutral-800 rounded p-1 flex-shrink-0 mr-2">
                             <img id="bc-logo-b" class="max-w-full max-h-full object-contain hidden">
                         </div>
-                        <div id="bc-color-bar-b" class="absolute right-0 top-0 bottom-0 w-3 shadow-lg"></div>
+                        <div id="bc-color-bar-b" class="absolute right-0 top-0 bottom-0 w-3"></div>
                     </div>
 
                 </div>
@@ -418,7 +390,7 @@
             isViewer: false,
             roomCode: '',
             mode: 'bigscreen', 
-            broadcastStyle: 'ESPN', // ESPN or TNT
+            broadcastStyle: 'NBC', // NBC, ESPN, PRIME
             isChromaOn: false,
             timerRunning: false,
             mainSeconds: 12 * 60,
@@ -426,498 +398,10 @@
             currentPeriod: 1,
             statusType: 'normal', 
             possession: 'none',
-            teamA: { name: 'LAKERS', score: 0, fouls: 0, timeouts: 7, color: '#552583', logo: '' },
-            teamB: { name: 'CELTICS', score: 0, fouls: 0, timeouts: 7, color: '#007a33', logo: '' },
-            config: { periodMin: 12, otMin: 5, shotClockSec: 24, maxTimeouts: 7 },
-            lang: 'zh'
+            teamA: { name: 'ACD', score: 0, fouls: 0, timeouts: 7, color: '#0055ff', logo: '' },
+            teamB: { name: 'BTL', score: 0, fouls: 0, timeouts: 7, color: '#e61c24', logo: '' },
+            config: { periodMin: 12, otMin: 5, shotClockSec: 24, maxTimeouts: 7 }
         };
-
-        const i18n = {
-            zh: {
-                'lang-host-tab': '👑 建立新比賽 (主控裝置)',
-                'lang-viewer-tab': '📺 加入已建立比賽 (看板/接收端)',
-                'lang-join-title': '連線至現場比賽',
-                'lang-join-desc': '請輸入主控裝置畫面上顯示的 6 位數房間代碼：',
-                'lang-home-setup': 'HOME TEAM (主隊)',
-                'lang-away-setup': 'AWAY TEAM (客隊)',
-                'lang-team-name-label': '球隊名稱 / 縮寫',
-                'lang-team-color-label': '隊伍主題色',
-                'lang-team-logo-label': '上傳隊徽',
-                'lang-rules-title': '⏱️ REGULATION & TIMING',
-                'lang-rule-period': '每節時間 (分)',
-                'lang-rule-ot': '延長賽時間 (分)',
-                'lang-rule-shot': '進攻秒數 (秒)',
-                'lang-rule-to': '每隊暫停次數',
-                'lang-launch-btn': 'LAUNCH SYSTEM (啟動系統)',
-                'lang-exit': '⚙️ 離開',
-                'lang-room-label': '房間代碼:',
-                'lang-viewer-badge': '現場轉播 - 僅供觀看模式',
-                'lang-mode-arena': '大螢幕模式',
-                'lang-mode-broadcast': '轉播模式 (OBS)',
-                'lang-chroma-btn': '綠幕去背',
-                'lang-fullscreen': '🖵 全螢幕',
-                'lang-team-fouls': '團隊犯規',
-                'lang-timeouts-left': '剩餘暫停',
-                'lang-use-btn': '使用',
-                'lang-period-label': '節數',
-                'lang-shot-clock': '進攻秒數',
-                'lang-start-stop': '啟動/暫停',
-                'lang-timeout-btn': '暫停計時 (60秒)',
-                'lang-horn-btn': '🔊 鳴笛',
-                'lang-poss-btn': '🏀 球權',
-                'lang-ft-btn': '罰球',
-                'lang-console-foul': '犯規:',
-                'lang-console-to': '暫停:',
-                'lang-console-use': '用',
-                'lang-console-timer': '啟動/暫停計時',
-                'lang-console-horn': '🔊鳴笛',
-                'lang-console-24': '24秒',
-                'lang-console-14': '14秒',
-                'lang-console-prev': '上節',
-                'lang-console-next': '下節',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["第一節", "第二節", "第三節", "第四節", "延長賽"]
-            },
-            en: {
-                'lang-host-tab': '👑 CREATE NEW GAME (HOST)',
-                'lang-viewer-tab': '📺 JOIN GAME (VIEWER/BOARD)',
-                'lang-join-title': 'CONNECT TO LIVE GAME',
-                'lang-join-desc': 'Enter the 6-digit room code displayed on host screen:',
-                'lang-home-setup': 'HOME TEAM CONFIG',
-                'lang-away-setup': 'AWAY TEAM CONFIG',
-                'lang-team-name-label': 'TEAM NAME / ABBR',
-                'lang-team-color-label': 'THEME COLOR',
-                'lang-team-logo-label': 'UPLOAD LOGO',
-                'lang-rules-title': '⏱️ REGULATION & TIMING',
-                'lang-rule-period': 'PERIOD MINS',
-                'lang-rule-ot': 'OVERTIME MINS',
-                'lang-rule-shot': 'SHOT CLOCK SECS',
-                'lang-rule-to': 'TIMEOUTS PER TEAM',
-                'lang-launch-btn': 'LAUNCH SYSTEM',
-                'lang-exit': '⚙️ EXIT',
-                'lang-room-label': 'ROOM:',
-                'lang-viewer-badge': 'LIVE BROADCAST - VIEW ONLY',
-                'lang-mode-arena': 'ARENA SCREEN',
-                'lang-mode-broadcast': 'BROADCAST (OBS)',
-                'lang-chroma-btn': 'CHROMA KEY',
-                'lang-fullscreen': '🖵 FULLSCREEN',
-                'lang-team-fouls': 'TEAM FOULS',
-                'lang-timeouts-left': 'TIMEOUTS LEFT',
-                'lang-use-btn': 'USE',
-                'lang-period-label': 'PERIOD',
-                'lang-shot-clock': 'SHOT CLOCK',
-                'lang-start-stop': 'START/STOP',
-                'lang-timeout-btn': 'TIMEOUT (60S)',
-                'lang-horn-btn': '🔊 HORN',
-                'lang-poss-btn': '🏀 POSS',
-                'lang-ft-btn': 'FT +1',
-                'lang-console-foul': 'FOULS:',
-                'lang-console-to': 'TO:',
-                'lang-console-use': 'USE',
-                'lang-console-timer': 'START/STOP TIMER',
-                'lang-console-horn': '🔊 HORN',
-                'lang-console-24': '24 SEC',
-                'lang-console-14': '14 SEC',
-                'lang-console-prev': 'PREV',
-                'lang-console-next': 'NEXT',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1ST QTR", "2ND QTR", "3RD QTR", "4TH QTR", "OT"]
-            },
-            ja: {
-                'lang-host-tab': '👑 新規試合作成 (ホスト)',
-                'lang-viewer-tab': '📺 試合に参加 (ビューアー)',
-                'lang-join-title': '試合に接続する',
-                'lang-join-desc': 'ホスト画面に表示されている6桁のコードを入力してください：',
-                'lang-home-setup': 'ホームチーム設定',
-                'lang-away-setup': 'アウェイチーム設定',
-                'lang-team-name-label': 'チーム名 / 略称',
-                'lang-team-color-label': 'チームカラー',
-                'lang-team-logo-label': 'ロゴをアップロード',
-                'lang-rules-title': '⏱️ 試合規則＆タイマー設定',
-                'lang-rule-period': 'クォーター時間 (分)',
-                'lang-rule-ot': '延長戦時間 (分)',
-                'lang-rule-shot': 'ショットクロック (秒)',
-                'lang-rule-to': 'タイムアウト回数',
-                'lang-launch-btn': 'システム起動',
-                'lang-exit': '⚙️ 終了',
-                'lang-room-label': 'ルームID:',
-                'lang-viewer-badge': 'ライブ配信 - 閲覧専用モード',
-                'lang-mode-arena': 'アリーナ画面',
-                'lang-mode-broadcast': '配信モード (OBS)',
-                'lang-chroma-btn': 'グリーンバック',
-                'lang-fullscreen': '🖵 全画面表示',
-                'lang-team-fouls': 'チームファウル',
-                'lang-timeouts-left': 'タイムアウト残数',
-                'lang-use-btn': '使用',
-                'lang-period-label': 'ピリオド',
-                'lang-shot-clock': '24秒クロック',
-                'lang-start-stop': 'スタート/ストップ',
-                'lang-timeout-btn': 'タイムアウト (60秒)',
-                'lang-horn-btn': '🔊 ホーン',
-                'lang-poss-btn': '🏀 ポゼッション',
-                'lang-ft-btn': 'フリースロー',
-                'lang-console-foul': 'ファウル:',
-                'lang-console-to': 'タイムアウト:',
-                'lang-console-use': '使',
-                'lang-console-timer': 'タイマー 開始/停止',
-                'lang-console-horn': '🔊ホーン',
-                'lang-console-24': '24秒',
-                'lang-console-14': '14秒',
-                'lang-console-prev': '前節',
-                'lang-console-next': '次節',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1ST QTR", "2ND QTR", "3RD QTR", "4TH QTR", "OT"]
-            },
-            ko: {
-                'lang-host-tab': '👑 새 경기 생성 (호스트)',
-                'lang-viewer-tab': '📺 경기 참가 (뷰어/전광판)',
-                'lang-join-title': '라이브 경기 연결',
-                'lang-join-desc': '호스트 화면에 표시된 6자리 방 코드를 입력하세요:',
-                'lang-home-setup': '홈 팀 설정',
-                'lang-away-setup': '어웨이 팀 설정',
-                'lang-team-name-label': '팀 이름 / 약어',
-                'lang-team-color-label': '팀 테마 색상',
-                'lang-team-logo-label': '로고 업로드',
-                'lang-rules-title': '⏱️ 경기 규칙 및 시간 설정',
-                'lang-rule-period': '쿼터 시간 (분)',
-                'lang-rule-ot': '연장전 시간 (분)',
-                'lang-rule-shot': '공격 제한 시간 (초)',
-                'lang-rule-to': '팀별 작전타임 횟수',
-                'lang-launch-btn': '시스템 시작',
-                'lang-exit': '⚙️ 나가기',
-                'lang-room-label': '방 코드:',
-                'lang-viewer-badge': '라이브 중계 - 보기 전용 모드',
-                'lang-mode-arena': '아레나 스크린',
-                'lang-mode-broadcast': '중계 모드 (OBS)',
-                'lang-chroma-btn': '크로마키 키',
-                'lang-fullscreen': '🖵 전체 화면',
-                'lang-team-fouls': '팀 파울',
-                'lang-timeouts-left': '남은 작전타임',
-                'lang-use-btn': '사용',
-                'lang-period-label': '쿼터',
-                'lang-shot-clock': '공격 시간',
-                'lang-start-stop': '시작/정지',
-                'lang-timeout-btn': '작전타임 (60초)',
-                'lang-horn-btn': '🔊 버저',
-                'lang-poss-btn': '🏀 공격권',
-                'lang-ft-btn': '자유투',
-                'lang-console-foul': '파울:',
-                'lang-console-to': '작전타임:',
-                'lang-console-use': '사용',
-                'lang-console-timer': '타이머 시작/일시정지',
-                'lang-console-horn': '🔊버저',
-                'lang-console-24': '24초',
-                'lang-console-14': '14초',
-                'lang-console-prev': '이전',
-                'lang-console-next': '다음',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1ST QTR", "2ND QTR", "3RD QTR", "4TH QTR", "OT"]
-            },
-            es: {
-                'lang-host-tab': '👑 CREAR JUEGO (ANFITRIÓN)',
-                'lang-viewer-tab': '📺 UNIRSE AL JUEGO (ESPECTADOR)',
-                'lang-join-title': 'CONECTAR AL JUEGO EN VIVO',
-                'lang-join-desc': 'Ingrese el código de 6 dígitos que aparece en el host:',
-                'lang-home-setup': 'CONFIGURACIÓN EQUIPO LOCAL',
-                'lang-away-setup': 'CONFIGURACIÓN EQUIPO VISITANTE',
-                'lang-team-name-label': 'NOMBRE EQUIPO / ABBR',
-                'lang-team-color-label': 'COLOR DE EQUIPO',
-                'lang-team-logo-label': 'SUBIR ESCUDO',
-                'lang-rules-title': '⏱️ REGULACIÓN Y TIEMPOS',
-                'lang-rule-period': 'MINUTOS POR PERÍODO',
-                'lang-rule-ot': 'MINUTOS PRÓRROGA',
-                'lang-rule-shot': 'RELOJ DE POSESIÓN (SEG)',
-                'lang-rule-to': 'TIEMPOS MUERTOS POR EQUIPO',
-                'lang-launch-btn': 'INICIAR SISTEMA',
-                'lang-exit': '⚙️ SALIR',
-                'lang-room-label': 'SALA:',
-                'lang-viewer-badge': 'TRANSMISIÓN EN VIVO - SOLO LECTURA',
-                'lang-mode-arena': 'PANTALLA ARENA',
-                'lang-mode-broadcast': 'MODO OBS (BROADCAST)',
-                'lang-chroma-btn': 'FONDO VERDE',
-                'lang-fullscreen': '🖵 PANTALLA COMPLETA',
-                'lang-team-fouls': 'FALTAS DE EQUIPO',
-                'lang-timeouts-left': 'TIEMPOS RESTANTES',
-                'lang-use-btn': 'USAR',
-                'lang-period-label': 'PERÍODO',
-                'lang-shot-clock': 'RELOJ DE TIRO',
-                'lang-start-stop': 'INICIAR/PARAR',
-                'lang-timeout-btn': 'TIEMPO MUERTO (60s)',
-                'lang-horn-btn': '🔊 BOCINA',
-                'lang-poss-btn': '🏀 POSESIÓN',
-                'lang-ft-btn': 'T. LIBRE',
-                'lang-console-foul': 'FALTAS:',
-                'lang-console-to': 'T.MUERTO:',
-                'lang-console-use': 'USAR',
-                'lang-console-timer': 'INICIAR/PAUSAR TIEMPO',
-                'lang-console-horn': '🔊BOCINA',
-                'lang-console-24': '24 SEG',
-                'lang-console-14': '14 SEG',
-                'lang-console-prev': 'ANT',
-                'lang-console-next': 'SIG',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1° PERÍODO", "2° PERÍODO", "3° PERÍODO", "4° PERÍODO", "PRÓRROGA"]
-            },
-            fr: {
-                'lang-host-tab': '👑 CRÉER UN MATCH (HÔTE)',
-                'lang-viewer-tab': '📺 REJOINDRE LE MATCH (SPECTATEUR)',
-                'lang-join-title': 'CONNEXION EN DIRECT',
-                'lang-join-desc': 'Entrez le code à 6 chiffres affiché sur l\'écran hôte :',
-                'lang-home-setup': 'CONFIG ÉQUIPE DOMICILE',
-                'lang-away-setup': 'CONFIG ÉQUIPE EXTÉRIEURE',
-                'lang-team-name-label': 'NOM DE L\'ÉQUIPE / ABBR',
-                'lang-team-color-label': 'COULEUR DE L\'ÉQUIPE',
-                'lang-team-logo-label': 'CHARGER LOGO',
-                'lang-rules-title': '⏱️ RÈGLEMENTATION & CHRONO',
-                'lang-rule-period': 'MINUTES PAR QUART-TEMPS',
-                'lang-rule-ot': 'MINUTES PROLONGATION',
-                'lang-rule-shot': 'RELOJ DES 24S (SEC)',
-                'lang-rule-to': 'TEMPS MORTS PAR ÉQUIPE',
-                'lang-launch-btn': 'LANCER LE SYSTÈME',
-                'lang-exit': '⚙️ QUITTER',
-                'lang-room-label': 'SALON:',
-                'lang-viewer-badge': 'DIRECT - MODE LECTURE SEULE',
-                'lang-mode-arena': 'ÉCRAN GÉANT',
-                'lang-mode-broadcast': 'MODE OBS (STREAM)',
-                'lang-chroma-btn': 'FOND VERT',
-                'lang-fullscreen': '🖵 PLEIN ÉCRAN',
-                'lang-team-fouls': 'FAUTES D\'ÉQUIPE',
-                'lang-timeouts-left': 'TEMPS MORTS RESTANTS',
-                'lang-use-btn': 'UTILISER',
-                'lang-period-label': 'PÉRIODE',
-                'lang-shot-clock': 'CHRONO DE TIR',
-                'lang-start-stop': 'START/STOP',
-                'lang-timeout-btn': 'TEMPS MORT (60s)',
-                'lang-horn-btn': '🔊 CORNE',
-                'lang-poss-btn': '🏀 POSSESSION',
-                'lang-ft-btn': 'LANCE FR.',
-                'lang-console-foul': 'FAUTES:',
-                'lang-console-to': 'T.MORT:',
-                'lang-console-use': 'UTIL',
-                'lang-console-timer': 'DEMARRER/PAUSE CHRONO',
-                'lang-console-horn': '🔊CORNE',
-                'lang-console-24': '24 SEC',
-                'lang-console-14': '14 SEC',
-                'lang-console-prev': 'PRÉC',
-                'lang-console-next': 'SUIV',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1ER QUART", "2E QUART", "3E QUART", "4E QUART", "PROLONG."]
-            },
-            de: {
-                'lang-host-tab': '👑 SPIEL ERSTELLEN (HOST)',
-                'lang-viewer-tab': '📺 SPIEL BEITRETEN (ZUSCHAUER)',
-                'lang-join-title': 'LIVE-SPIEL VERBINDEN',
-                'lang-join-desc': 'Geben Sie den 6-stelligen Raumcode vom Host-Bildschirm ein:',
-                'lang-home-setup': 'HEIMTEAM-EINSTELLUNGEN',
-                'lang-away-setup': 'AUSWÄRTSTEAM-EINSTELLUNGEN',
-                'lang-team-name-label': 'TEAMNAME / ABK.',
-                'lang-team-color-label': 'TEAMFARBE',
-                'lang-team-logo-label': 'LOGO HOCHLADEN',
-                'lang-rules-title': '⏱️ REGELN & ZEITMESSUNG',
-                'lang-rule-period': 'MINUTEN PRO VIERTEL',
-                'lang-rule-ot': 'MINUTEN VERLÄNGERUNG',
-                'lang-rule-shot': 'WURFZEITAUFNAHME (SEK)',
-                'lang-rule-to': 'TIMEOUTS PRO TEAM',
-                'lang-launch-btn': 'SYSTEM STARTEN',
-                'lang-exit': '⚙️ BEENDEN',
-                'lang-room-label': 'RAUM:',
-                'lang-viewer-badge': 'LIVE-PROJEKTION - NUR LESEMODUS',
-                'lang-mode-arena': 'ARENA-ANZEIGE',
-                'lang-mode-broadcast': 'STREAM-MODO (OBS)',
-                'lang-chroma-btn': 'GRÜNER BILDSCHIRM',
-                'lang-fullscreen': '🖵 VOLLBILD',
-                'lang-team-fouls': 'TEAMFOULS',
-                'lang-timeouts-left': 'TIMEOUTS ÜBRIG',
-                'lang-use-btn': 'NÜTZEN',
-                'lang-period-label': 'VIERTEL',
-                'lang-shot-clock': 'ANGRIFFSZEIT',
-                'lang-start-stop': 'START/STOPP',
-                'lang-timeout-btn': 'TIMEOUT (60s)',
-                'lang-horn-btn': '🔊 HUPE',
-                'lang-poss-btn': '🏀 BALLBES.',
-                'lang-ft-btn': 'FREIW.',
-                'lang-console-foul': 'FOULS:',
-                'lang-console-to': 'TO:',
-                'lang-console-use': 'NUTZ',
-                'lang-console-timer': 'ZEIT START/STOPP',
-                'lang-console-horn': '🔊HUPE',
-                'lang-console-24': '24 SEK',
-                'lang-console-14': '14 SEK',
-                'lang-console-prev': 'ZURÜCK',
-                'lang-console-next': 'WEITER',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1. VIERTEL", "2. VIERTEL", "3. VIERTEL", "4. VIERTEL", "VERLÄNG."]
-            },
-            it: {
-                'lang-host-tab': '👑 CREA PARTITA (HOST)',
-                'lang-viewer-tab': '📺 UNISCITI ALLA PARTITA (VIEWER)',
-                'lang-join-title': 'CONNETTI ALLA PARTITA LIVE',
-                'lang-join-desc': 'Inserisci il codice a 6 cifre mostrato sullo schermo dell\'host:',
-                'lang-home-setup': 'CONFIG SQUADRA DI CASA',
-                'lang-away-setup': 'CONFIG SQUADRA OSPITE',
-                'lang-team-name-label': 'NOME SQUADRA / ABBR',
-                'lang-team-color-label': 'COLORE SOCIALE',
-                'lang-team-logo-label': 'CARICA LOGO',
-                'lang-rules-title': '⏱️ REGOLAMENTO E TEMPI',
-                'lang-rule-period': 'MINUTI PER QUARTO',
-                'lang-rule-ot': 'MINUTI OVERTIME',
-                'lang-rule-shot': 'CRONOMETRO DI TIRO (SEC)',
-                'lang-rule-to': 'TIMEOUT PER SQUADRA',
-                'lang-launch-btn': 'AVVIA SISTEMA',
-                'lang-exit': 'ESCI',
-                'lang-room-label': 'STANZA:',
-                'lang-viewer-badge': 'TRASMISSIONE LIVE - SOLO LETTURA',
-                'lang-mode-arena': 'SCHERMO ARENA',
-                'lang-mode-broadcast': 'MODALITÀ OBS (REGIA)',
-                'lang-chroma-btn': 'CHROMA KEY',
-                'lang-fullscreen': '🖵 SCHERMO INTERO',
-                'lang-team-fouls': 'FALLI DI SQUADRA',
-                'lang-timeouts-left': 'TIMEOUT RIMANENTI',
-                'lang-use-btn': 'USA',
-                'lang-period-label': 'PERIODO',
-                'lang-shot-clock': 'RELOJ DI TIRO',
-                'lang-start-stop': 'START/STOP',
-                'lang-timeout-btn': 'TIMEOUT (60s)',
-                'lang-horn-btn': '🔊 SIRENA',
-                'lang-poss-btn': '🏀 POSSESSO',
-                'lang-ft-btn': 'T. LIBERO',
-                'lang-console-foul': 'FALLI:',
-                'lang-console-to': 'TO:',
-                'lang-console-use': 'USA',
-                'lang-console-timer': 'AVVIA/PAUSA TIMER',
-                'lang-console-horn': '🔊SIRENA',
-                'lang-console-24': '24 SEC',
-                'lang-console-14': '14 SEC',
-                'lang-console-prev': 'PREC',
-                'lang-console-next': 'SUCC',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1° QUARTO", "2° QUARTO", "3° QUARTO", "4° QUARTO", "OVERTIME"]
-            },
-            pt: {
-                'lang-host-tab': '👑 CRIAR JOGO (ANFITRIÃO)',
-                'lang-viewer-tab': '📺 ENTRAR NO JOGO (PAINEL)',
-                'lang-join-title': 'CONECTAR AO JOGO AO VIVO',
-                'lang-join-desc': 'Insira o código de 6 dígitos exibido na tela do host:',
-                'lang-home-setup': 'CONFIG EQUIPE DA CASA',
-                'lang-away-setup': 'CONFIG EQUIPE VISITANTE',
-                'lang-team-name-label': 'NOME DA EQUIPE / ABBR',
-                'lang-team-color-label': 'COR DA EQUIPE',
-                'lang-team-logo-label': 'ENVIAR ESCUDO',
-                'lang-rules-title': '⏱️ REGULAMENTO E CRONÔMETRO',
-                'lang-rule-period': 'MINUTOS POR QUARTO',
-                'lang-rule-ot': 'MINUTOS PRORROGAÇÃO',
-                'lang-rule-shot': 'RELOGIO DE ARREMESSO (SEG)',
-                'lang-rule-to': 'TIMEOUTS POR EQUIPE',
-                'lang-launch-btn': 'INICIAR SISTEMA',
-                'lang-exit': 'SAIR',
-                'lang-room-label': 'SALA:',
-                'lang-viewer-badge': 'TRANSMISSÃO AO VIVO - MODO VISUALIZAÇÃO',
-                'lang-mode-arena': 'TELÃO DA ARENA',
-                'lang-mode-broadcast': 'MODO OBS (TRANSMISSÃO)',
-                'lang-chroma-btn': 'CROMATISMO',
-                'lang-fullscreen': '🖵 TELA CHEIA',
-                'lang-team-fouls': 'FALTAS DE EQUIPE',
-                'lang-timeouts-left': 'TIMEOUTS RESTANTES',
-                'lang-use-btn': 'USAR',
-                'lang-period-label': 'PERÍODO',
-                'lang-shot-clock': 'RELOGIO DE TIRO',
-                'lang-start-stop': 'INICIAR/PARAR',
-                'lang-timeout-btn': 'TIMEOUT (60s)',
-                'lang-horn-btn': '🔊 SIRENE',
-                'lang-poss-btn': '🏀 POSSE',
-                'lang-ft-btn': 'L. LIVRE',
-                'lang-console-foul': 'FALTAS:',
-                'lang-console-to': 'TO:',
-                'lang-console-use': 'USA',
-                'lang-console-timer': 'INICIAR/PAUSAR TEMPO',
-                'lang-console-horn': '🔊SIRENE',
-                'lang-console-24': '24 SEG',
-                'lang-console-14': '14 SEG',
-                'lang-console-prev': 'ANT',
-                'lang-console-next': 'PROX',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1° QUARTO", "2° QUARTO", "3° QUARTO", "4° QUARTO", "PRORROG."]
-            },
-            ru: {
-                'lang-host-tab': '👑 СОЗДАТЬ МАТЧ (УПРАВЛЕНИЕ)',
-                'lang-viewer-tab': '📺 ПОДКЛЮЧИТЬ ТАБЛО (ПРОСМОТР)',
-                'lang-join-title': 'ПОДКЛЮЧЕНИЕ К МАТЧУ',
-                'lang-join-desc': 'Введите 6-значный код комнаты, указанный на главном экране:',
-                'lang-home-setup': 'НАСТРОЙКИ ХОЗЯЕВ',
-                'lang-away-setup': 'НАСТРОЙКИ ГОСТЕЙ',
-                'lang-team-name-label': 'НАЗВАНИЕ КОМАНДЫ / СОКР.',
-                'lang-team-color-label': 'ЦВЕТ КОМАНДЫ',
-                'lang-team-logo-label': 'ЗАГРУЗИТЬ ЛОГОТИП',
-                'lang-rules-title': '⏱️ РЕГЛАМЕНТ И ВРЕМЯ',
-                'lang-rule-period': 'МИНУТ В ЧЕТВЕРТИ',
-                'lang-rule-ot': 'МИНУТ В ОВЕРТАЙМЕ',
-                'lang-rule-shot': 'ВРЕМЯ НА АТАКУ (СЕК)',
-                'lang-rule-to': 'ТАЙМ-АУТОВ У КОМАНДЫ',
-                'lang-launch-btn': 'ЗАПУСТИТЬ СИСТЕМУ',
-                'lang-exit': 'ВЫХОД',
-                'lang-room-label': 'КОД:',
-                'lang-viewer-badge': 'ПРЯМАЯ ТРАНСЛЯЦИЯ - ТОЛЬКО ПРОСМОТР',
-                'lang-mode-arena': 'РЕЖИМ АРЕНЫ',
-                'lang-mode-broadcast': 'ТРАНСЛЯЦИЯ (OBS)',
-                'lang-chroma-btn': 'ХРОМАКЕЙ',
-                'lang-fullscreen': '🖵 ПОЛНЫЙ ЭКРАН',
-                'lang-team-fouls': 'КОМАНДНЫЕ ФОЛЫ',
-                'lang-timeouts-left': 'ОСТАЛОСЬ ТАЙМ-АУТОВ',
-                'lang-use-btn': 'ИСПОЛ.',
-                'lang-period-label': 'ПЕРИОД',
-                'lang-shot-clock': 'ВРЕМЯ НА АТАКУ',
-                'lang-start-stop': 'СТАРТ/СТОП',
-                'lang-timeout-btn': 'ТАЙМ-АУТ (60с)',
-                'lang-horn-btn': '🔊 СИРЕНА',
-                'lang-poss-btn': '🏀 ВЛАДЕНИЕ',
-                'lang-ft-btn': 'ШТРАФ.',
-                'lang-console-foul': 'ФОЛЫ:',
-                'lang-console-to': 'Т.А.:',
-                'lang-console-use': 'ИСПО',
-                'lang-console-timer': 'ЗАПУСК/ПАУЗА ТАЙМЕРА',
-                'lang-console-horn': '🔊СИРЕНА',
-                'lang-console-24': '24 СЕК',
-                'lang-console-14': '14 СЕК',
-                'lang-console-prev': 'ПРЕД',
-                'lang-console-next': 'СЛЕД',
-                'lang-bug-foul': 'FOULS:',
-                'lang-bug-to': 'TO:',
-                periods: ["1-Я ЧЕТВ.", "2-Я ЧЕТВ.", "3-Я ЧЕТВ.", "4-Я ЧЕТВ.", "ОВЕРТАЙМ"]
-            }
-        };
-
-        function selectLanguage(langCode) {
-            state.lang = langCode;
-            document.getElementById('setup-lang-select').value = langCode;
-            document.getElementById('main-lang-select').value = langCode;
-            applyLanguage();
-            if (!state.isViewer) broadcastState();
-        }
-
-        function applyLanguage() {
-            const currentLexicon = i18n[state.lang];
-            for (const key in currentLexicon) {
-                if (key === 'periods') continue;
-                const elements = document.querySelectorAll(`.${key}`);
-                elements.forEach(el => {
-                    if (!(el.tagName === 'INPUT' && el.placeholder)) {
-                        el.innerText = currentLexicon[key];
-                    }
-                });
-            }
-            if(document.getElementById('scoreboard-screen').classList.contains('hidden') === false) {
-                updateDisplay();
-            }
-        }
 
         let mqttClient = null;
         let countdownInterval = null;
@@ -948,7 +432,10 @@
 
         function toggleTheme() {
             if (state.isViewer) return;
-            state.broadcastStyle = state.broadcastStyle === 'ESPN' ? 'TNT' : 'ESPN';
+            if (state.broadcastStyle === 'NBC') state.broadcastStyle = 'ESPN';
+            else if (state.broadcastStyle === 'ESPN') state.broadcastStyle = 'PRIME';
+            else state.broadcastStyle = 'NBC';
+            
             updateDisplay();
             broadcastState();
         }
@@ -956,7 +443,6 @@
         function handleLogo(input, team) {
             const file = input.files[0];
             if (file) {
-                if (file.size > 80000) alert("隊徽檔案過大！請壓縮至 50KB 以下。");
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const base64Img = e.target.result;
@@ -981,9 +467,9 @@
                 state.roomCode = code;
             } else {
                 state.roomCode = generateRoomCode();
-                state.teamA.name = document.getElementById('setup-name-a').value.toUpperCase() || 'HOME';
+                state.teamA.name = document.getElementById('setup-name-a').value.toUpperCase() || 'ACD';
                 state.teamA.color = document.getElementById('setup-color-a').value;
-                state.teamB.name = document.getElementById('setup-name-b').value.toUpperCase() || 'AWAY';
+                state.teamB.name = document.getElementById('setup-name-b').value.toUpperCase() || 'BTL';
                 state.teamB.color = document.getElementById('setup-color-b').value;
 
                 state.config.periodMin = parseInt(document.getElementById('cfg-period').value) || 12;
@@ -1026,12 +512,7 @@
                         state.possession = data.possession; state.teamA = data.teamA;
                         state.teamB = data.teamB; state.config = data.config;
                         state.isChromaOn = data.isChromaOn;
-                        state.broadcastStyle = data.broadcastStyle || 'ESPN';
-                        if(state.lang !== data.lang) {
-                            state.lang = data.lang;
-                            document.getElementById('main-lang-select').value = data.lang;
-                            applyLanguage();
-                        }
+                        state.broadcastStyle = data.broadcastStyle || 'NBC';
                         updateDisplay();
                     } catch (e) { console.error(e); }
                 }
@@ -1039,7 +520,6 @@
 
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('scoreboard-screen').classList.remove('hidden');
-            applyLanguage();
             updateDisplay();
         }
 
@@ -1051,16 +531,15 @@
         function updateSyncStatus(status) {
             const dot = document.getElementById('sync-status-dot');
             const txt = document.getElementById('sync-status-text');
-            const zhMode = state.lang === 'zh';
             if (status === 'connected') {
                 dot.className = "w-2 h-2 bg-emerald-500 inline-block";
-                txt.innerText = state.isViewer ? (zhMode ? "已同步現場" : "LIVE SYNCED") : (zhMode ? "雲端主控中" : "HOSTING CLOUD");
+                txt.innerText = state.isViewer ? "已同步現場" : "雲端主控中";
             } else if (status === 'connecting') {
                 dot.className = "w-2 h-2 bg-amber-500 inline-block animate-pulse";
-                txt.innerText = zhMode ? "連線中..." : "CONNECTING...";
+                txt.innerText = "連線中...";
             } else {
                 dot.className = "w-2 h-2 bg-red-500 inline-block animate-pulse";
-                txt.innerText = zhMode ? "離線" : "OFFLINE";
+                txt.innerText = "離線";
             }
         }
 
@@ -1077,26 +556,22 @@
             document.getElementById('bc-color-bar-a').style.backgroundColor = state.teamA.color;
             document.getElementById('bc-color-bar-b').style.backgroundColor = state.teamB.color;
 
-            // 切換轉播字卡主題樣式 (ESPN / TNT)
+            // 切換 2025-26 電視轉播風格
             const btnTheme = document.getElementById('btn-theme-toggle');
             const container = document.getElementById('bc-card-container');
-            const centerBox = document.getElementById('bc-center-box');
-            const shotBox = document.getElementById('bc-shot-box');
             
-            if (state.broadcastStyle === 'TNT') {
-                btnTheme.innerText = "STYLE: TNT ON NBA";
-                btnTheme.className = "bg-gradient-to-r from-neutral-800 to-red-700 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-red-500";
-                
-                container.className = "tnt-style rounded-none flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-6xl w-full";
-                centerBox.className = "w-[220px] bg-gradient-to-b from-neutral-800 via-neutral-900 to-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-700 flex-shrink-0 px-2";
-                shotBox.className = "w-[90px] tnt-accent-red h-full flex flex-col items-center justify-center border-r border-neutral-700 flex-shrink-0";
-            } else {
-                btnTheme.innerText = "STYLE: ESPN";
+            if (state.broadcastStyle === 'NBC') {
+                btnTheme.innerText = "STYLE: NBC / peacock";
+                btnTheme.className = "bg-gradient-to-r from-blue-600 to-indigo-800 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-blue-500";
+                container.className = "nbc-style flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-5xl w-full";
+            } else if (state.broadcastStyle === 'ESPN') {
+                btnTheme.innerText = "STYLE: NBA ESPN";
                 btnTheme.className = "bg-gradient-to-r from-red-600 to-red-800 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-red-500";
-                
-                container.className = "espn-glow bg-neutral-950 border-2 border-neutral-800/80 rounded-md flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-6xl w-full";
-                centerBox.className = "w-[220px] bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 flex-shrink-0 px-2";
-                shotBox.className = "w-[90px] bg-black h-full flex flex-col items-center justify-center border-r border-neutral-800 flex-shrink-0";
+                container.className = "espn-style flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-5xl w-full";
+            } else {
+                btnTheme.innerText = "STYLE: PRIME VIDEO";
+                btnTheme.className = "bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-cyan-400";
+                container.className = "prime-style flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-5xl w-full";
             }
 
             const setLogo = (logo, bigId, bcId) => {
@@ -1114,51 +589,34 @@
 
             document.getElementById('big-foul-a').innerText = state.teamA.fouls;
             document.getElementById('big-foul-b').innerText = state.teamB.fouls;
-            document.getElementById('bc-foul-text-a').innerText = state.teamA.fouls;
-            document.getElementById('bc-foul-text-b').innerText = state.teamB.fouls;
-            document.getElementById('bc-to-text-a').innerText = state.teamA.timeouts;
-            document.getElementById('bc-to-text-b').innerText = state.teamB.timeouts;
-            
-            const applyBonus = (fouls, bigBonusId, bcBonusId) => {
-                const bigB = document.getElementById(bigBonusId); const bcB = document.getElementById(bcBonusId);
-                if (fouls >= 5) {
-                    bigB.className = "inline-block mt-2 bg-red-600 text-white px-2 py-0.5 text-xs font-extrabold tracking-widest border border-red-500 animate-pulse";
-                    bcB.classList.remove('hidden');
-                } else {
-                    bigB.className = "inline-block mt-2 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-xs font-extrabold tracking-widest border border-neutral-800";
-                    bcB.classList.add('hidden');
-                }
-            };
-            applyBonus(state.teamA.fouls, 'big-bonus-a', 'bc-bonus-a');
-            applyBonus(state.teamB.fouls, 'big-bonus-b', 'bc-bonus-b');
 
-            const renderTimeouts = (timeouts, containerId) => {
-                const container = document.getElementById(containerId); container.innerHTML = '';
+            // 渲染暫停點數（大螢幕與轉播字卡）
+            const renderTimeouts = (timeouts, containerId, isDots = false) => {
+                const container = document.getElementById(containerId); 
+                container.innerHTML = '';
                 for(let i=0; i < state.config.maxTimeouts; i++) {
                     const bar = document.createElement('div');
-                    bar.className = `w-2.5 h-1.5 border ${i < timeouts ? 'bg-cyan-400 border-cyan-400' : 'bg-transparent border-neutral-800'}`;
+                    if (isDots) {
+                        bar.className = `w-3 h-1.5 rounded-sm ${i < timeouts ? 'bg-cyan-400' : 'bg-neutral-700'}`;
+                    } else {
+                        bar.className = `w-3 h-2 border ${i < timeouts ? 'bg-cyan-400 border-cyan-400' : 'bg-transparent border-neutral-800'}`;
+                    }
                     container.appendChild(bar);
                 }
             };
             renderTimeouts(state.teamA.timeouts, 'big-timeouts-bar-a');
             renderTimeouts(state.teamB.timeouts, 'big-timeouts-bar-b');
+            renderTimeouts(state.teamA.timeouts, 'bc-to-dots-a', true);
+            renderTimeouts(state.teamB.timeouts, 'bc-to-dots-b', true);
 
             document.getElementById('big-poss-a').style.opacity = state.possession === 'A' ? '1' : '0.1';
             document.getElementById('big-poss-b').style.opacity = state.possession === 'B' ? '1' : '0.1';
             document.getElementById('bc-poss-a').style.opacity = state.possession === 'A' ? '1' : '0';
             document.getElementById('bc-poss-b').style.opacity = state.possession === 'B' ? '1' : '0';
 
-            let pText = "";
-            const currentPeriods = i18n[state.lang].periods;
-            if (state.currentPeriod <= 4) {
-                pText = currentPeriods[state.currentPeriod - 1];
-            } else {
-                pText = `${currentPeriods[4]} ${state.currentPeriod - 4}`;
-            }
+            const pText = state.currentPeriod <= 4 ? `${state.currentPeriod}ST QTR` : `OT ${state.currentPeriod - 4}`;
             document.getElementById('big-period').innerText = state.currentPeriod;
             document.getElementById('bc-period').innerText = pText;
-
-            document.getElementById('game-status-text').innerText = state.statusType === 'timeout' ? (state.lang === 'zh' ? "--- 暫停時間 ---" : "--- TIMEOUT ---") : "";
 
             let mins = Math.floor(state.mainSeconds / 60); let secs = state.mainSeconds % 60;
             let timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -1167,13 +625,6 @@
 
             document.getElementById('big-shot-clock').innerText = state.shotSeconds;
             document.getElementById('bc-shot-clock').innerText = state.shotSeconds;
-            if(state.shotSeconds <= 5 && state.shotSeconds > 0) {
-                document.getElementById('big-shot-clock').className = "digital text-7xl font-bold text-yellow-500 leading-none";
-            } else if (state.shotSeconds === 0) {
-                document.getElementById('big-shot-clock').className = "digital text-7xl font-bold text-red-600 leading-none animate-pulse";
-            } else {
-                document.getElementById('big-shot-clock').className = "digital text-7xl font-bold text-red-600 leading-none";
-            }
 
             const btnChroma = document.getElementById('btn-chroma');
             if (state.isChromaOn) {
@@ -1183,8 +634,6 @@
                 document.body.className = "bg-neutral-950 text-neutral-100 min-h-screen";
                 if(btnChroma) btnChroma.className = "bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase lang-chroma-btn";
             }
-            
-            if(mqttClient && mqttClient.connected) updateSyncStatus('connected');
         }
 
         function adjustScore(team, amount) {
@@ -1210,18 +659,9 @@
             if (state.isViewer) return;
             pauseTimer();
             state.currentPeriod = Math.max(1, state.currentPeriod + amount);
-            state.statusType = 'normal';
-            
-            state.teamA.fouls = 0;
-            state.teamB.fouls = 0;
-
-            if (state.currentPeriod > 4) {
-                state.mainSeconds = state.config.otMin * 60;
-            } else {
-                state.mainSeconds = state.config.periodMin * 60;
-            }
+            state.teamA.fouls = 0; state.teamB.fouls = 0;
+            state.mainSeconds = (state.currentPeriod > 4 ? state.config.otMin : state.config.periodMin) * 60;
             state.shotSeconds = state.config.shotClockSec;
-            
             updateDisplay(); broadcastState();
         }
 
@@ -1238,59 +678,75 @@
 
         function toggleTimer() {
             if (state.isViewer) return;
-            if (state.timerRunning) pauseTimer(); else startTimer();
+            
+            // 點擊時自動解鎖瀏覽器 AudioContext
+            if (!window.audioCtx) {
+                window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (window.audioCtx.state === 'suspended') {
+                window.audioCtx.resume();
+            }
+
+            if (state.timerRunning) pauseTimer(); 
+            else startTimer();
         }
 
         function startTimer() {
             if (state.timerRunning) return;
             state.timerRunning = true;
-            document.getElementById('main-timer-control').className = "col-span-1 bg-red-600 text-white font-bold py-2.5 text-xs uppercase tracking-wider lang-start-stop";
+            document.getElementById('main-timer-control').innerText = "STOP";
+            document.getElementById('main-timer-control').className = "col-span-1 bg-red-600 text-white font-extrabold py-2.5 text-xs uppercase tracking-wider";
 
             countdownInterval = setInterval(() => {
                 if (state.mainSeconds > 0) {
                     state.mainSeconds--;
-                    if (state.statusType === 'normal' && state.shotSeconds > 0) {
+                    if (state.shotSeconds > 0) {
                         state.shotSeconds--;
                         if (state.shotSeconds === 0) triggerBuzzer();
                     }
                 } else {
                     state.mainSeconds = 0;
-                    pauseTimer(); triggerBuzzer();
-                    state.statusType = 'normal';
+                    pauseTimer(); 
+                    triggerBuzzer();
                 }
-                updateDisplay(); broadcastState();
+                updateDisplay(); 
+                broadcastState();
             }, 1000);
         }
 
         function pauseTimer() {
-            state.timerRunning = false; clearInterval(countdownInterval);
-            document.getElementById('main-timer-control').className = "col-span-1 bg-amber-600 text-neutral-950 font-extrabold py-2.5 text-xs uppercase tracking-wider lang-start-stop";
+            state.timerRunning = false; 
+            clearInterval(countdownInterval);
+            document.getElementById('main-timer-control').innerText = "START";
+            document.getElementById('main-timer-control').className = "col-span-1 bg-amber-600 text-neutral-950 font-extrabold py-2.5 text-xs uppercase tracking-wider";
             broadcastState();
         }
 
         function startSpecialTimer(type, secs) {
             if (state.isViewer) return;
-            pauseTimer(); state.statusType = type; state.mainSeconds = secs;
+            pauseTimer(); state.mainSeconds = secs;
             updateDisplay(); broadcastState(); startTimer();
         }
 
         function triggerBuzzer() {
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
-                oscillator.type = 'sawtooth'; 
-                oscillator.frequency.setValueAtTime(320, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(0.7, audioCtx.currentTime);
-                oscillator.start(); setTimeout(() => { oscillator.stop(); }, 1800);
-            } catch (e) {}
+                if (!window.audioCtx) window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (window.audioCtx.state === 'suspended') window.audioCtx.resume();
+                
+                const osc = window.audioCtx.createOscillator();
+                const gain = window.audioCtx.createGain();
+                osc.connect(gain); gain.connect(window.audioCtx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(320, window.audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.7, window.audioCtx.currentTime);
+                osc.start();
+                setTimeout(() => osc.stop(), 1800);
+            } catch (e) { console.log(e); }
         }
 
         function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => alert(err.message));
-            } else { document.exitFullscreen(); }
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
         }
 
         function switchMode(mode) {
@@ -1323,16 +779,12 @@
         }
 
         function backToSetup() {
-            const msg = state.lang === 'zh' ? "確定離開目前連線？" : "Are you sure you want to exit?";
-            if(confirm(msg)) {
+            if(confirm("確定離開目前連線？")) {
                 pauseTimer(); if(mqttClient) mqttClient.end();
-                updateSyncStatus('offline');
                 document.getElementById('scoreboard-screen').classList.add('hidden');
                 document.getElementById('setup-screen').classList.remove('hidden');
             }
         }
-        
-        applyLanguage();
     </script>
 </body>
 </html>
