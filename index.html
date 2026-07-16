@@ -5,19 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NBA PRO 雲端同步記分板系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Anta&family=Oswald:wght=500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anta&family=Oswald:wght=500;700&family=Teko:wght=600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
     <style>
         body { font-family: 'Oswald', 'Noto Sans TC', sans-serif; letter-spacing: 0.05em; }
         .digital { font-family: 'Anta', monospace; }
+        .espn-font { font-family: 'Teko', sans-serif; }
         ::-webkit-scrollbar { display: none; }
+        
+        .espn-glow { box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 255, 255, 0.05); }
+        
+        /* TNT 特效風格 */
+        .tnt-style {
+            background: linear-gradient(180deg, #1f242d 0%, #0d0f12 100%);
+            border: 2px solid #3a414e;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .tnt-accent-red {
+            background: linear-gradient(180deg, #e61c24 0%, #990000 100%);
+        }
     </style>
 </head>
 <body class="bg-neutral-950 text-neutral-100 min-h-screen transition-colors duration-300 select-none">
 
     <div id="setup-screen" class="max-w-4xl mx-auto px-4 py-8">
-        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA PRO SCOREBOARD SYSTEM</h1>
-        <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync</p>
+        <h1 class="text-4xl font-extrabold text-center mb-2 tracking-tighter text-white uppercase">🏀 NBA SCOREBOARD</h1>
+        <p class="text-center text-neutral-500 text-xs mb-8 uppercase tracking-widest">Multi-Device Cloud Sync / ESPN & TNT Broadcast Edition</p>
         
         <div class="flex border border-neutral-800 mb-6 bg-neutral-900 p-1">
             <button id="tab-host" onclick="switchSetupTab('host')" class="w-1/2 py-3 text-sm font-bold uppercase tracking-wider bg-white text-neutral-950 transition lang-host-tab">
@@ -43,12 +56,12 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs uppercase text-neutral-500 mb-1 lang-team-name-label">球隊名稱 / 縮寫</label>
-                        <input type="text" id="setup-name-a" value="ACD" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
+                        <input type="text" id="setup-name-a" value="LAKERS" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs uppercase text-neutral-500 mb-1 lang-team-color-label">隊伍主題色</label>
-                            <input type="color" id="setup-color-a" value="#c8102e" class="w-full h-10 bg-neutral-950 border border-neutral-800 rounded-none p-1 cursor-pointer">
+                            <input type="color" id="setup-color-a" value="#552583" class="w-full h-10 bg-neutral-950 border border-neutral-800 rounded-none p-1 cursor-pointer">
                         </div>
                         <div>
                             <label class="block text-xs uppercase text-neutral-500 mb-1 lang-team-logo-label">上傳隊徽</label>
@@ -71,12 +84,12 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs uppercase text-neutral-500 mb-1 lang-team-name-label">球隊名稱 / 縮寫</label>
-                        <input type="text" id="setup-name-b" value="BTL" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
+                        <input type="text" id="setup-name-b" value="CELTICS" class="w-full bg-neutral-950 border border-neutral-800 rounded-none px-3 py-2 text-white focus:outline-none focus:border-neutral-500 font-bold uppercase">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs uppercase text-neutral-500 mb-1 lang-team-color-label">隊伍主題色</label>
-                            <input type="color" id="setup-color-b" value="#552583" class="w-full h-10 bg-neutral-950 border border-neutral-800 rounded-none p-1 cursor-pointer">
+                            <input type="color" id="setup-color-b" value="#007a33" class="w-full h-10 bg-neutral-950 border border-neutral-800 rounded-none p-1 cursor-pointer">
                         </div>
                         <div>
                             <label class="block text-xs uppercase text-neutral-500 mb-1 lang-team-logo-label">上傳隊徽</label>
@@ -149,6 +162,8 @@
                 <div id="viewer-badge" class="hidden bg-amber-500/10 border border-amber-500 text-amber-500 text-[10px] px-2 py-0.5 font-bold tracking-widest lang-viewer-badge">LIVE BROADCAST - VIEW ONLY</div>
             </div>
             <div class="flex items-center gap-1">
+                <button id="btn-theme-toggle" onclick="toggleTheme()" class="bg-gradient-to-r from-red-600 to-red-800 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-red-500">STYLE: ESPN</button>
+                
                 <button id="btn-mode-big" onclick="switchMode('bigscreen')" class="bg-white text-neutral-950 px-3 py-1 text-xs font-bold uppercase lang-mode-arena">ARENA SCREEN</button>
                 <button id="btn-mode-broadcast" onclick="switchMode('broadcast')" class="bg-neutral-900 text-neutral-400 hover:text-white px-3 py-1 text-xs font-bold uppercase border border-neutral-800 lang-mode-broadcast">BROADCAST (OBS)</button>
                 <button id="btn-chroma" onclick="toggleChroma()" class="hidden bg-neutral-900 text-neutral-400 px-3 py-1 text-xs font-bold border border-neutral-800 uppercase lang-chroma-btn">CHROMA KEY</button>
@@ -337,52 +352,61 @@
                 </div>
             </div>
 
-            <div class="w-full flex justify-center py-12">
-                <div class="bg-neutral-950 border border-neutral-900 flex items-center h-14 shadow-2xl overflow-hidden font-bold text-sm relative select-none">
-                    <div id="bc-color-bar-a" class="w-2.5 h-full flex-shrink-0"></div>
+            <div class="w-full flex justify-center py-10">
+                <div id="bc-card-container" class="espn-glow bg-neutral-950 border-2 border-neutral-800/80 rounded-md flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-6xl w-full">
                     
-                    <div class="w-[135px] px-3 flex items-center gap-2 bg-neutral-950 flex-shrink-0">
-                        <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800 flex-shrink-0">
+                    <div id="bc-team-box-a" class="w-[300px] h-full flex items-center px-4 bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 relative flex-shrink-0">
+                        <div id="bc-color-bar-a" class="absolute left-0 top-0 bottom-0 w-3 shadow-lg"></div>
+                        <div class="w-12 h-12 flex items-center justify-center bg-neutral-900 border border-neutral-800 rounded p-1 flex-shrink-0 ml-2">
                             <img id="bc-logo-a" class="max-w-full max-h-full object-contain hidden">
                         </div>
-                        <span id="bc-poss-a" class="text-amber-500 opacity-0 text-xs flex-shrink-0">🏀</span>
-                        <div class="flex flex-col min-w-0 flex-grow">
-                            <span id="bc-name-a" class="uppercase tracking-wider text-base truncate">HOME</span>
-                            <div class="text-[9px] text-neutral-400 flex gap-1.5 font-normal whitespace-nowrap">
-                                <span><span class="lang-bug-foul">FOULS:</span> <span id="bc-foul-text-a" class="font-bold text-white">0</span></span>
-                                <span><span class="lang-bug-to">TO:</span> <span id="bc-to-text-a" class="font-bold text-cyan-400">7</span></span>
+                        <div class="flex flex-col min-w-0 flex-grow ml-3">
+                            <div class="flex items-center gap-2">
+                                <span id="bc-name-a" class="espn-font text-3xl tracking-wide uppercase truncate text-white leading-none">LAKERS</span>
+                                <span id="bc-poss-a" class="text-amber-500 text-sm opacity-0 flex-shrink-0 animate-pulse">🏀</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-[11px] text-neutral-400 mt-1">
+                                <span class="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300 font-medium"><span class="lang-bug-foul">FOULS</span> <strong id="bc-foul-text-a" class="text-white">0</strong></span>
+                                <span class="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300 font-medium"><span class="lang-bug-to">TO</span> <strong id="bc-to-text-a" class="text-cyan-400">7</strong></span>
+                                <span id="bc-bonus-a" class="bg-red-600 text-white font-black px-1.5 py-0.5 rounded text-[10px] hidden animate-pulse">BONUS</span>
                             </div>
                         </div>
-                        <span id="bc-bonus-a" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse flex-shrink-0">B</span>
                     </div>
-                    
-                    <div class="w-[55px] h-full bg-neutral-900 flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white flex-shrink-0" id="bc-score-a">0</div>
-                    
-                    <div class="w-[110px] bg-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 flex-shrink-0">
-                        <span class="digital text-xl text-white leading-none tracking-wide" id="bc-main-time">12:00</span>
-                        <span class="text-[9px] text-neutral-400 uppercase tracking-widest mt-1 font-bold text-center truncate w-[100px]" id="bc-period">1ST QTR</span>
+
+                    <div id="bc-score-box-a" class="w-[110px] h-full bg-neutral-900/90 border-x border-neutral-800 flex items-center justify-center digital text-5xl font-extrabold text-white flex-shrink-0 shadow-inner" id="bc-score-a">0</div>
+
+                    <div id="bc-center-box" class="w-[220px] bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 flex-shrink-0 px-2">
+                        <span class="digital text-3xl font-black text-amber-400 leading-none tracking-tight" id="bc-main-time">12:00</span>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <span class="espn-font text-lg text-neutral-300 tracking-wider uppercase text-center font-bold" id="bc-period">1ST QTR</span>
+                        </div>
                     </div>
-                    
-                    <div class="w-[45px] bg-neutral-950 h-full flex items-center justify-center border-r border-neutral-800 digital text-xl text-red-500 flex-shrink-0 text-center" id="bc-shot-clock">24</div>
-                    
-                    <div class="w-[55px] h-full bg-neutral-900 flex items-center justify-center border-r border-neutral-800 digital text-2xl text-white flex-shrink-0" id="bc-score-b">0</div>
-                    
-                    <div class="w-[135px] px-3 flex items-center gap-2 bg-neutral-950 flex-shrink-0 justify-end text-right">
-                        <span id="bc-bonus-b" class="text-[9px] bg-red-600 text-white px-1 py-0.5 rounded-sm hidden animate-pulse flex-shrink-0">B</span>
-                        <div class="flex flex-col min-w-0 flex-grow text-right">
-                            <span id="bc-name-b" class="uppercase tracking-wider text-base truncate">AWAY</span>
-                            <div class="text-[9px] text-neutral-400 flex gap-1.5 font-normal justify-end whitespace-nowrap">
-                                <span><span class="lang-bug-to">TO:</span> <span id="bc-to-text-b" class="font-bold text-cyan-400">7</span></span>
-                                <span><span class="lang-bug-foul">FOULS:</span> <span id="bc-foul-text-b" class="font-bold text-white">0</span></span>
+
+                    <div id="bc-shot-box" class="w-[90px] bg-black h-full flex flex-col items-center justify-center border-r border-neutral-800 flex-shrink-0">
+                        <span class="text-[9px] text-neutral-500 uppercase tracking-widest font-extrabold -mb-1">SHOT</span>
+                        <span class="digital text-3xl font-extrabold text-red-500 leading-none" id="bc-shot-clock">24</span>
+                    </div>
+
+                    <div id="bc-score-box-b" class="w-[110px] h-full bg-neutral-900/90 border-r border-neutral-800 flex items-center justify-center digital text-5xl font-extrabold text-white flex-shrink-0 shadow-inner" id="bc-score-b">0</div>
+
+                    <div id="bc-team-box-b" class="w-[300px] h-full flex items-center px-4 bg-gradient-to-l from-neutral-900 via-neutral-950 to-neutral-900 relative flex-shrink-0 justify-end text-right">
+                        <div class="flex flex-col min-w-0 flex-grow mr-3 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <span id="bc-poss-b" class="text-amber-500 text-sm opacity-0 flex-shrink-0 animate-pulse">🏀</span>
+                                <span id="bc-name-b" class="espn-font text-3xl tracking-wide uppercase truncate text-white leading-none">CELTICS</span>
+                            </div>
+                            <div class="flex items-center justify-end gap-3 text-[11px] text-neutral-400 mt-1">
+                                <span id="bc-bonus-b" class="bg-red-600 text-white font-black px-1.5 py-0.5 rounded text-[10px] hidden animate-pulse">BONUS</span>
+                                <span class="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300 font-medium"><span class="lang-bug-to">TO</span> <strong id="bc-to-text-b" class="text-cyan-400">7</strong></span>
+                                <span class="bg-neutral-800 px-2 py-0.5 rounded text-neutral-300 font-medium"><span class="lang-bug-foul">FOULS</span> <strong id="bc-foul-text-b" class="text-white">0</strong></span>
                             </div>
                         </div>
-                        <span id="bc-poss-b" class="text-amber-500 opacity-0 text-xs flex-shrink-0">🏀</span>
-                        <div class="w-8 h-8 flex items-center justify-center bg-neutral-900 p-0.5 border border-neutral-800 flex-shrink-0">
+                        <div class="w-12 h-12 flex items-center justify-center bg-neutral-900 border border-neutral-800 rounded p-1 flex-shrink-0 mr-2">
                             <img id="bc-logo-b" class="max-w-full max-h-full object-contain hidden">
                         </div>
+                        <div id="bc-color-bar-b" class="absolute right-0 top-0 bottom-0 w-3 shadow-lg"></div>
                     </div>
-                    
-                    <div id="bc-color-bar-b" class="w-2.5 h-full flex-shrink-0"></div>
+
                 </div>
             </div>
             <div></div>
@@ -394,6 +418,7 @@
             isViewer: false,
             roomCode: '',
             mode: 'bigscreen', 
+            broadcastStyle: 'ESPN', // ESPN or TNT
             isChromaOn: false,
             timerRunning: false,
             mainSeconds: 12 * 60,
@@ -401,8 +426,8 @@
             currentPeriod: 1,
             statusType: 'normal', 
             possession: 'none',
-            teamA: { name: 'ACD', score: 0, fouls: 0, timeouts: 7, color: '#c8102e', logo: '' },
-            teamB: { name: 'BTL', score: 0, fouls: 0, timeouts: 7, color: '#552583', logo: '' },
+            teamA: { name: 'LAKERS', score: 0, fouls: 0, timeouts: 7, color: '#552583', logo: '' },
+            teamB: { name: 'CELTICS', score: 0, fouls: 0, timeouts: 7, color: '#007a33', logo: '' },
             config: { periodMin: 12, otMin: 5, shotClockSec: 24, maxTimeouts: 7 },
             lang: 'zh'
         };
@@ -450,8 +475,8 @@
                 'lang-console-14': '14秒',
                 'lang-console-prev': '上節',
                 'lang-console-next': '下節',
-                'lang-bug-foul': '犯規:',
-                'lang-bug-to': '暫停:',
+                'lang-bug-foul': 'FOULS:',
+                'lang-bug-to': 'TO:',
                 periods: ["第一節", "第二節", "第三節", "第四節", "延長賽"]
             },
             en: {
@@ -542,8 +567,8 @@
                 'lang-console-14': '14秒',
                 'lang-console-prev': '前節',
                 'lang-console-next': '次節',
-                'lang-bug-foul': 'ファウル:',
-                'lang-bug-to': 'タ残:',
+                'lang-bug-foul': 'FOULS:',
+                'lang-bug-to': 'TO:',
                 periods: ["1ST QTR", "2ND QTR", "3RD QTR", "4TH QTR", "OT"]
             },
             ko: {
@@ -588,8 +613,8 @@
                 'lang-console-14': '14초',
                 'lang-console-prev': '이전',
                 'lang-console-next': '다음',
-                'lang-bug-foul': '파울:',
-                'lang-bug-to': '작타:',
+                'lang-bug-foul': 'FOULS:',
+                'lang-bug-to': 'TO:',
                 periods: ["1ST QTR", "2ND QTR", "3RD QTR", "4TH QTR", "OT"]
             },
             es: {
@@ -634,8 +659,8 @@
                 'lang-console-14': '14 SEG',
                 'lang-console-prev': 'ANT',
                 'lang-console-next': 'SIG',
-                'lang-bug-foul': 'FALTAS:',
-                'lang-bug-to': 'TM:',
+                'lang-bug-foul': 'FOULS:',
+                'lang-bug-to': 'TO:',
                 periods: ["1° PERÍODO", "2° PERÍODO", "3° PERÍODO", "4° PERÍODO", "PRÓRROGA"]
             },
             fr: {
@@ -680,8 +705,8 @@
                 'lang-console-14': '14 SEC',
                 'lang-console-prev': 'PRÉC',
                 'lang-console-next': 'SUIV',
-                'lang-bug-foul': 'FAUTES:',
-                'lang-bug-to': 'TM:',
+                'lang-bug-foul': 'FOULS:',
+                'lang-bug-to': 'TO:',
                 periods: ["1ER QUART", "2E QUART", "3E QUART", "4E QUART", "PROLONG."]
             },
             de: {
@@ -746,7 +771,7 @@
                 'lang-rule-shot': 'CRONOMETRO DI TIRO (SEC)',
                 'lang-rule-to': 'TIMEOUT PER SQUADRA',
                 'lang-launch-btn': 'AVVIA SISTEMA',
-                'lang-exit': '⚙️ ESCI',
+                'lang-exit': 'ESCI',
                 'lang-room-label': 'STANZA:',
                 'lang-viewer-badge': 'TRASMISSIONE LIVE - SOLO LETTURA',
                 'lang-mode-arena': 'SCHERMO ARENA',
@@ -772,7 +797,7 @@
                 'lang-console-14': '14 SEC',
                 'lang-console-prev': 'PREC',
                 'lang-console-next': 'SUCC',
-                'lang-bug-foul': 'FALLI:',
+                'lang-bug-foul': 'FOULS:',
                 'lang-bug-to': 'TO:',
                 periods: ["1° QUARTO", "2° QUARTO", "3° QUARTO", "4° QUARTO", "OVERTIME"]
             },
@@ -792,7 +817,7 @@
                 'lang-rule-shot': 'RELOGIO DE ARREMESSO (SEG)',
                 'lang-rule-to': 'TIMEOUTS POR EQUIPE',
                 'lang-launch-btn': 'INICIAR SISTEMA',
-                'lang-exit': '⚙️ SAIR',
+                'lang-exit': 'SAIR',
                 'lang-room-label': 'SALA:',
                 'lang-viewer-badge': 'TRANSMISSÃO AO VIVO - MODO VISUALIZAÇÃO',
                 'lang-mode-arena': 'TELÃO DA ARENA',
@@ -818,8 +843,8 @@
                 'lang-console-14': '14 SEG',
                 'lang-console-prev': 'ANT',
                 'lang-console-next': 'PROX',
-                'lang-bug-foul': 'FALTAS:',
-                'lang-bug-to': 'TM:',
+                'lang-bug-foul': 'FOULS:',
+                'lang-bug-to': 'TO:',
                 periods: ["1° QUARTO", "2° QUARTO", "3° QUARTO", "4° QUARTO", "PRORROG."]
             },
             ru: {
@@ -838,7 +863,7 @@
                 'lang-rule-shot': 'ВРЕМЯ НА АТАКУ (СЕК)',
                 'lang-rule-to': 'ТАЙМ-АУТОВ У КОМАНДЫ',
                 'lang-launch-btn': 'ЗАПУСТИТЬ СИСТЕМУ',
-                'lang-exit': '⚙️ ВЫХОД',
+                'lang-exit': 'ВЫХОД',
                 'lang-room-label': 'КОД:',
                 'lang-viewer-badge': 'ПРЯМАЯ ТРАНСЛЯЦИЯ - ТОЛЬКО ПРОСМОТР',
                 'lang-mode-arena': 'РЕЖИМ АРЕНЫ',
@@ -864,8 +889,8 @@
                 'lang-console-14': '14 СЕК',
                 'lang-console-prev': 'ПРЕД',
                 'lang-console-next': 'СЛЕД',
-                'lang-bug-foul': 'ФОЛЫ:',
-                'lang-bug-to': 'ТА:',
+                'lang-bug-foul': 'FOULS:',
+                'lang-bug-to': 'TO:',
                 periods: ["1-Я ЧЕТВ.", "2-Я ЧЕТВ.", "3-Я ЧЕТВ.", "4-Я ЧЕТВ.", "ОВЕРТАЙМ"]
             }
         };
@@ -919,6 +944,13 @@
                 tHost.className = "w-1/2 py-3 text-sm font-bold uppercase tracking-wider text-neutral-400 hover:text-white transition lang-host-tab";
                 boxHost.classList.add('hidden'); boxRules.classList.add('hidden'); boxViewer.classList.remove('hidden');
             }
+        }
+
+        function toggleTheme() {
+            if (state.isViewer) return;
+            state.broadcastStyle = state.broadcastStyle === 'ESPN' ? 'TNT' : 'ESPN';
+            updateDisplay();
+            broadcastState();
         }
 
         function handleLogo(input, team) {
@@ -994,6 +1026,7 @@
                         state.possession = data.possession; state.teamA = data.teamA;
                         state.teamB = data.teamB; state.config = data.config;
                         state.isChromaOn = data.isChromaOn;
+                        state.broadcastStyle = data.broadcastStyle || 'ESPN';
                         if(state.lang !== data.lang) {
                             state.lang = data.lang;
                             document.getElementById('main-lang-select').value = data.lang;
@@ -1044,6 +1077,28 @@
             document.getElementById('bc-color-bar-a').style.backgroundColor = state.teamA.color;
             document.getElementById('bc-color-bar-b').style.backgroundColor = state.teamB.color;
 
+            // 切換轉播字卡主題樣式 (ESPN / TNT)
+            const btnTheme = document.getElementById('btn-theme-toggle');
+            const container = document.getElementById('bc-card-container');
+            const centerBox = document.getElementById('bc-center-box');
+            const shotBox = document.getElementById('bc-shot-box');
+            
+            if (state.broadcastStyle === 'TNT') {
+                btnTheme.innerText = "STYLE: TNT ON NBA";
+                btnTheme.className = "bg-gradient-to-r from-neutral-800 to-red-700 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-red-500";
+                
+                container.className = "tnt-style rounded-none flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-6xl w-full";
+                centerBox.className = "w-[220px] bg-gradient-to-b from-neutral-800 via-neutral-900 to-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-700 flex-shrink-0 px-2";
+                shotBox.className = "w-[90px] tnt-accent-red h-full flex flex-col items-center justify-center border-r border-neutral-700 flex-shrink-0";
+            } else {
+                btnTheme.innerText = "STYLE: ESPN";
+                btnTheme.className = "bg-gradient-to-r from-red-600 to-red-800 text-white px-3 py-1 text-xs font-black uppercase tracking-wider border border-red-500";
+                
+                container.className = "espn-glow bg-neutral-950 border-2 border-neutral-800/80 rounded-md flex items-center h-20 shadow-2xl overflow-hidden font-bold select-none relative max-w-6xl w-full";
+                centerBox.className = "w-[220px] bg-gradient-to-b from-neutral-950 via-neutral-900 to-neutral-950 h-full flex flex-col justify-center items-center border-r border-neutral-800 flex-shrink-0 px-2";
+                shotBox.className = "w-[90px] bg-black h-full flex flex-col items-center justify-center border-r border-neutral-800 flex-shrink-0";
+            }
+
             const setLogo = (logo, bigId, bcId) => {
                 const bDom = document.getElementById(bigId); const cDom = document.getElementById(bcId);
                 if(logo) { bDom.src = logo; bDom.classList.remove('hidden'); cDom.src = logo; cDom.classList.remove('hidden'); }
@@ -1068,8 +1123,6 @@
                 const bigB = document.getElementById(bigBonusId); const bcB = document.getElementById(bcBonusId);
                 if (fouls >= 5) {
                     bigB.className = "inline-block mt-2 bg-red-600 text-white px-2 py-0.5 text-xs font-extrabold tracking-widest border border-red-500 animate-pulse";
-                    bcB.innerText = "B";
-                    bcB.com
                     bcB.classList.remove('hidden');
                 } else {
                     bigB.className = "inline-block mt-2 bg-neutral-900 text-neutral-700 px-2 py-0.5 text-xs font-extrabold tracking-widest border border-neutral-800";
@@ -1095,7 +1148,6 @@
             document.getElementById('bc-poss-a').style.opacity = state.possession === 'A' ? '1' : '0';
             document.getElementById('bc-poss-b').style.opacity = state.possession === 'B' ? '1' : '0';
 
-            // 動態取得當前語系的節數文字
             let pText = "";
             const currentPeriods = i18n[state.lang].periods;
             if (state.currentPeriod <= 4) {
